@@ -1,0 +1,16 @@
+// Sample embedded-style application: sensor -> logic -> actuator loop.
+// Run from project root: ./bin/melt-embedded examples/embedded_system/main.melt
+// Uses only features available in the embedded build (no HTTP, MySQL, GUI).
+
+import "config.melt";
+import "loop.melt";
+
+print "Embedded system sample — starting";
+let state = 0;
+let i = 0;
+while (i < cycleCount) {
+    state = runCycle(state, sensorPath, actuatorPath);
+    i = i + 1;
+}
+print "Done. Total cycles: ";
+print state;

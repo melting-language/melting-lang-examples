@@ -1,0 +1,7 @@
+// Configuration for the embedded system sample.
+// Adjust these for your run; paths are relative to project root when you run:
+//   ./bin/melt-embedded examples/embedded_system/main.melt
+
+let cycleCount = 5;
+let sensorPath  = "examples/embedded_system/sensor.txt";
+let actuatorPath = "examples/embedded_system/actuator.txt";

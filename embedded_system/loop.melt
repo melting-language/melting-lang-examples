@@ -1,0 +1,19 @@
+// Core control loop: read sensor input, update state, write actuator output.
+// In a real embedded setup, "sensor" could be gpioRead() or uartRead(); "actuator" could be gpioWrite() or uartWrite().
+// Sensor file must exist (e.g. examples/embedded_system/sensor.txt).
+
+let runCycle = fn(state, sensorPath, actuatorPath) {
+    let raw = "0";
+    try {
+        raw = readFile(sensorPath);
+    } catch (e) {
+        raw = "0";
+    }
+    let nextState = state + 1;
+    writeFile(actuatorPath, raw);
+    print "cycle ";
+    print nextState;
+    print " sensor=";
+    print raw;
+    return nextState;
+};
