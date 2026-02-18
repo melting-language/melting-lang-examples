@@ -1,0 +1,132 @@
+// MCP Router: parses JSON-RPC request, dispatches by method, returns JSON-RPC response.
+// Add new methods in dispatch() and implement handlers below.
+
+class McpRouter {
+    method handle() {
+        let raw = getMcpRequest();
+        if (MCP_DEBUG) {
+            writeStderr("[mcp] request: ");
+            writeStderr(getMcpRequest());
+            writeStderr("\n");
+        }
+        let req = jsonDecode(raw);
+        let id = 0;
+        if (req == false) {
+            setMcpResponse(jsonEncode(error(0, PARSE_ERROR, "Parse error")));
+            return;
+        }
+        if (req.id != 0 && req.id != false) {
+            id = req.id;
+        }
+        let mname = "";
+        let methodVal = req["method"];
+        if (methodVal != false && methodVal != "") {
+            mname = methodVal;
+        }
+        if (mname == "") {
+            setMcpResponse(jsonEncode(error(id, INVALID_REQUEST, "Missing method")));
+            return;
+        }
+        let params = objectCreate();
+        if (req.params != false) {
+            params = req.params;
+        }
+        let result = this.dispatch(mname, params, id);
+        if (result == false) {
+            setMcpResponse(jsonEncode(error(id, INTERNAL_ERROR, "Handler did not set response")));
+            return;
+        }
+        setMcpResponse(jsonEncode(result));
+        if (MCP_DEBUG) {
+            writeStderr("[mcp] response: ");
+            writeStderr(getMcpResponse());
+            writeStderr("\n");
+        }
+    }
+
+    // Route by method name. Return success(id, result) or error(id, code, message).
+    method dispatch(mname, params, id) {
+        if (mname == "ping") {
+            return this.ping(id);
+        }
+        if (mname == "echo") {
+            return this.echo(params, id);
+        }
+        if (mname == "add") {
+            return this.add(params, id);
+        }
+        if (mname == "tools/list") {
+            return this.toolsList(id);
+        }
+        if (mname == "initialize") {
+            return this.initialize(id);
+        }
+        return error(id, METHOD_NOT_FOUND, "Method not found: " + mname);
+    }
+
+    method ping(id) {
+        return success(id, "pong");
+    }
+
+    method echo(params, id) {
+        let msg = "hello";
+        if (params.message != false) {
+            msg = params.message;
+        }
+        return success(id, msg);
+    }
+
+    method add(params, id) {
+        let a = 0;
+        let b = 0;
+        if (params.a != false) { a = params.a; }
+        if (params.b != false) { b = params.b; }
+        return success(id, a + b);
+    }
+
+    method toolsList(id) {
+        let tools = arrayCreate();
+        arrayPush(tools, this.makeTool("ping", "Respond with pong"));
+        arrayPush(tools, this.makeTool("echo", "Echo a message"));
+        arrayPush(tools, this.makeTool("add", "Add two numbers (params: a, b)"));
+        return success(id, tools);
+    }
+
+    method makeTool(name, desc) {
+        return ToolDesc(name, desc);
+    }
+
+    method initialize(id) {
+        let caps = InitCaps();
+        let serverInfo = InitServerInfo("melt-mcp-framework", "1.0");
+        let out = InitResult(caps, serverInfo);
+        return success(id, out);
+    }
+}
+
+class ToolDesc {
+    method init(name, desc) {
+        this.name = name;
+        this.description = desc;
+    }
+}
+
+class InitCaps {
+    method init() {
+        this.tools = objectCreate();
+    }
+}
+
+class InitServerInfo {
+    method init(name, version) {
+        this.name = name;
+        this.version = version;
+    }
+}
+
+class InitResult {
+    method init(caps, serverInfo) {
+        this.capabilities = caps;
+        this.serverInfo = serverInfo;
+    }
+}

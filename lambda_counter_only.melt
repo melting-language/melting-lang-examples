@@ -1,0 +1,8 @@
+let makeCounter = fn() {
+    let n = 0;
+    return fn() { n = n + 1; return n; };
+};
+let counter = makeCounter();
+print counter();
+print counter();
+print counter();

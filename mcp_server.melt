@@ -1,26 +1,64 @@
-// Minimal MCP-style stdio server: one JSON-RPC message per line on stdin, one response per line on stdout.
+// Minimal MCP stdio server: one JSON-RPC line per request on stdin, one response line on stdout.
+// Handles "initialize" (required handshake) so Claude keeps the connection open; other methods get result.value.
 // Run: echo '{"jsonrpc":"2.0","id":1,"method":"ping"}' | ./bin/melt examples/mcp_server.melt
-// Handler uses getMcpRequest(), jsonDecode(), setMcpResponse(jsonEncode(...)).
 
 class McpServer {
     method handle() {
         let raw = getMcpRequest();
         let req = jsonDecode(raw);
+        writeStderr("parsed=" + jsonEncode(req) + "\n");
         let id = 0;
-        if (req != false) {
+        if (req != false && req.id != false) {
             id = req.id;
         }
-        let res = "pong";
-        let response = RpcResponse(id, res);
+        let methodName = "";
+        if (req != false && req.method != false) {
+            methodName = req.method;
+        }
+        let response = this.dispatch(id, methodName, req);
         setMcpResponse(jsonEncode(response));
     }
-}
 
-class RpcResponse {
-    method init(id, res) {
-        this.jsonrpc = "2.0";
-        this.id = id;
-        this.result = res;
+    method dispatch(id, methodName, req) {
+        writeStderr("dispatch method=" + methodName + " id=" + id + "\n");
+        if (methodName == "initialize") {
+            writeStderr("returning initialize result (method match)\n");
+            return this.buildInitializeResult(id);
+        }
+        let hasParams = req != false && req.params != false;
+        let hasProtocol = false;
+        if (hasParams && req.params.protocolVersion != false) { hasProtocol = true; }
+        if (hasProtocol) {
+            writeStderr("returning initialize result (params.protocolVersion)\n");
+            return this.buildInitializeResult(id);
+        }
+        writeStderr("returning pong\n");
+        return this.buildResponse(id, "pong");
+    }
+
+    method buildInitializeResult(id) {
+        let o = objectCreate();
+        o.jsonrpc = "2.0";
+        o.id = id;
+        let resultObj = objectCreate();
+        resultObj.protocolVersion = "2025-11-25";
+        resultObj.capabilities = objectCreate();
+        let serverInfo = objectCreate();
+        serverInfo.name = "melt-mcp";
+        serverInfo.version = "1.0";
+        resultObj.serverInfo = serverInfo;
+        o.result = resultObj;
+        return o;
+    }
+
+    method buildResponse(id, value) {
+        let o = objectCreate();
+        o.jsonrpc = "2.0";
+        o.id = id;
+        let resultObj = objectCreate();
+        resultObj.value = value;
+        o.result = resultObj;
+        return o;
     }
 }
 

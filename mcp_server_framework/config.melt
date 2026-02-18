@@ -1,0 +1,3 @@
+// MCP Server Framework — config
+// Set MCP_DEBUG = true to log each request/response to stderr.
+let MCP_DEBUG = false;

@@ -1,0 +1,27 @@
+// First-class functions / lambdas
+let add = fn(a, b) { return a + b; };
+print add(2, 3);
+
+let greet = fn(name) { return "Hello, " + name; };
+print greet("Melt");
+
+let mul = fn(x, y) { return x * y; };
+let double = fn(n) { return mul(n, 2); };
+print double(7);
+
+// Closure: read captured variable
+let outer = 10;
+let getOuter = fn() { return outer; };
+print getOuter();
+
+// Closure: mutable captured variable
+let makeCounter = fn() {
+    let n = 0;
+    return fn() { n = n + 1; return n; };
+};
+let counter = makeCounter();
+print counter();
+print counter();
+print counter();
+
+print "lambda_demo done";

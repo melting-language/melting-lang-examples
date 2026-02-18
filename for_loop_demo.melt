@@ -1,0 +1,9 @@
+// for loop: for ( init ; condition ; update ) body
+for (let i = 0; i < 5; i = i + 1) {
+    print i;
+}
+print "---";
+for (let j = 10; j > 0; j = j - 2) {
+    print j;
+}
+print "done";

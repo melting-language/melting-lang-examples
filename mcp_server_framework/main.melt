@@ -1,0 +1,10 @@
+// MCP Server Framework — entry point
+// Run from project root: ./bin/melt examples/mcp_server_framework/main.melt
+// Or pipe JSON-RPC lines: echo '{"jsonrpc":"2.0","id":1,"method":"ping"}' | ./bin/melt examples/mcp_server_framework/main.melt
+
+import "config.melt";
+import "lib/rpc.melt";
+import "router.melt";
+
+setMcpHandler("McpRouter");
+runMcp();
