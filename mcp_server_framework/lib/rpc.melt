@@ -1,0 +1,40 @@
+// JSON-RPC 2.0 response helpers for MCP.
+// Use success(id, result) or error(id, code, message) then jsonEncode the returned object.
+
+class RpcSuccess {
+    method init(id, result) {
+        this.jsonrpc = "2.0";
+        this.id = id;
+        this.result = result;
+    }
+}
+
+class RpcErrorInner {
+    method init(code, message) {
+        this.code = code;
+        this.message = message;
+    }
+}
+
+class RpcError {
+    method init(id, code, message) {
+        this.jsonrpc = "2.0";
+        this.id = id;
+        this.error = RpcErrorInner(code, message);
+    }
+}
+
+let success = fn(id, result) {
+    return RpcSuccess(id, result);
+};
+
+let error = fn(id, code, message) {
+    return RpcError(id, code, message);
+};
+
+// Standard JSON-RPC error codes (use 0 - n since Melt has no unary minus literal)
+let PARSE_ERROR = 0 - 32700;
+let INVALID_REQUEST = 0 - 32600;
+let METHOD_NOT_FOUND = 0 - 32601;
+let INVALID_PARAMS = 0 - 32602;
+let INTERNAL_ERROR = 0 - 32603;
