@@ -1,0 +1,56 @@
+// Video conversion demo using Melt + FFmpeg extension.
+// Run from project root: ./bin/melt examples/ffmpeg_demo.melt
+// Requires: extension = ffmpeg (in melt.config or melt.ini), make modules, ffmpeg on PATH.
+// Ensure examples/tmp exists: mkdir -p examples/tmp
+
+let tmp = "examples/tmp";
+let sample = tmp + "/sample.mp4";
+let webm = tmp + "/out.webm";
+let audio = tmp + "/audio.mp3";
+let gif = tmp + "/out.gif";
+
+print("ffmpegVersion: " + ffmpegVersion());
+print("ffmpegAvailable: " + ffmpegAvailable());
+print("ffprobeAvailable: " + ffprobeAvailable());
+
+if (!ffmpegAvailable()) {
+    print("Install ffmpeg (e.g. brew install ffmpeg or apt install ffmpeg).");
+} else {
+    // 1) Generate a short test video (2 sec, 320x240)
+    print("");
+    print("1. Generating test video " + sample + " ...");
+    let gen = ffmpegGenerateTestVideo(sample, 2, 320, 240);
+    print("   Generated: " + gen);
+
+    if (gen) {
+        // 2) Get duration and format info
+        let sec = ffprobeDuration(sample);
+        print("2. Duration: " + sec + " s");
+
+        let infoStr = ffprobeInfo(sample);
+        if (infoStr != "") {
+            let info = jsonDecode(infoStr);
+            print("   Format: " + info.format.format_name);
+        }
+
+        // 3) Convert to WebM
+        print("3. Converting to WebM " + webm + " ...");
+        let okWebm = ffmpegConvert(sample, webm);
+        print("   Convert (webm): " + okWebm);
+
+        // 4) Extract audio to MP3
+        print("4. Extracting audio to " + audio + " ...");
+        let okAudio = ffmpegExtractAudio(sample, audio, "mp3");
+        print("   Extract audio: " + okAudio);
+
+        // 5) Convert to animated GIF
+        print("5. Converting to GIF " + gif + " ...");
+        let okGif = ffmpegToGif(sample, gif, 320);
+        print("   To GIF: " + okGif);
+
+        print("");
+        print("Done. Outputs in " + tmp + "/");
+    } else {
+        print("Could not generate test video. Create " + tmp + " (mkdir -p examples/tmp) and try again.");
+    }
+}

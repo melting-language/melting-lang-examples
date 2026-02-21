@@ -1,0 +1,38 @@
+// Session and cookie demo. Run: ./bin/melt examples/session_cookies_demo.melt
+// Visit http://localhost:8765/ — counter is stored in session. /clear destroys the session.
+
+class App {
+    method handle() {
+        let path = getRequestPath();
+        if (path == "/clear") {
+            sessionDestroy();
+            setResponseStatus(302);
+            setResponseHeader("Location", "/");
+            setResponseBody("");
+            return;
+        }
+        if (path != "/") {
+            setResponseStatus(404);
+            setResponseBody("Not found");
+            return;
+        }
+        // Get or init counter in session
+        let countStr = sessionGet("count");
+        let count = parseNumber(countStr);
+        count = count + 1;
+        sessionSet("count", count);
+
+        // Optional: set a plain cookie (e.g. theme)
+        setCookie("theme", "dark", "/", 86400 * 30, 0);
+        let theme = getCookie("theme");
+        if (theme == "") { theme = "light"; }
+
+        setResponseContentType("text/html; charset=utf-8");
+        setResponseBody("<h1>Session &amp; cookies</h1><p>Page views (session): " + count + "</p><p>Cookie theme: " + theme + "</p><p><a href=\"/clear\">Clear session</a></p>");
+        setResponseStatus(200);
+    }
+}
+
+setHandler("App");
+listen(8765);
+print "Session/cookie demo: http://localhost:8765/";

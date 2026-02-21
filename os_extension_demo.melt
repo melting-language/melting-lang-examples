@@ -1,0 +1,20 @@
+// Requires extension = os in melt.ini / melt.config
+// Build modules first: make modules
+
+print("osVersion: " + osVersion());
+print("osName: " + osName());
+print("osArch: " + osArch());
+print("osPwd: " + osPwd());
+
+let home = osGetEnv("HOME");
+if (home != "") {
+    print("HOME: " + home);
+}
+
+let ok = osMkdirs("examples/tmp/os_demo");
+if (ok) {
+    print("Created (or already exists): examples/tmp/os_demo");
+}
+
+print("Exists examples/os_extension_demo.melt: " + osFileExists("examples/os_extension_demo.melt"));
+print("osExec exit code: " + osExec("echo os extension ready"));

@@ -1,0 +1,22 @@
+// External REST API example (GET + POST)
+// Run: ./bin/melt examples/rest_api_client.melt
+
+let getRes = httpGet("https://httpbin.org/get");
+print("GET status: " + getRes["status"]);
+if (getRes["ok"]) {
+    print("GET ok: true");
+} else {
+    print("GET ok: false");
+}
+print("GET body: " + getRes["body"]);
+
+let headers = "Content-Type: application/json";
+let postBody = "{\"name\":\"melt\",\"lang\":\"melt\"}";
+let postRes = httpPost("https://httpbin.org/post", postBody, headers);
+print("POST status: " + postRes["status"]);
+if (postRes["ok"]) {
+    print("POST ok: true");
+} else {
+    print("POST ok: false");
+}
+print("POST body: " + postRes["body"]);

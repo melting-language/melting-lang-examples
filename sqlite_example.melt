@@ -1,0 +1,21 @@
+// Build first: make with-sqlite
+// Run: ./bin/melt examples/sqlite_example.melt
+
+let ok = sqliteOpen("examples/demo.sqlite");
+if (!ok) {
+    print "sqliteOpen failed";
+} else {
+    sqliteExec("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)");
+    sqliteExec("DELETE FROM users");
+    sqliteExec("INSERT INTO users(name) VALUES ('Alice')");
+    sqliteExec("INSERT INTO users(name) VALUES ('Bob')");
+
+    let qok = sqliteQuery("SELECT id, name FROM users ORDER BY id");
+    if (qok) {
+        let rows = sqliteFetchAll();
+        foreach (row in rows) {
+            print("id=" + row[0] + ", name=" + row[1]);
+        }
+    }
+    sqliteClose();
+}

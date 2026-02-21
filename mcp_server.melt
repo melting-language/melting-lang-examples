@@ -6,33 +6,28 @@ class McpServer {
     method handle() {
         let raw = getMcpRequest();
         let req = jsonDecode(raw);
-        writeStderr("parsed=" + jsonEncode(req) + "\n");
         let id = 0;
         if (req != false && req.id != false) {
             id = req.id;
         }
         let methodName = "";
-        if (req != false && req.method != false) {
-            methodName = req.method;
+        if (req != false && req["method"] != false) {
+            methodName = req["method"];
         }
         let response = this.dispatch(id, methodName, req);
         setMcpResponse(jsonEncode(response));
     }
 
     method dispatch(id, methodName, req) {
-        writeStderr("dispatch method=" + methodName + " id=" + id + "\n");
         if (methodName == "initialize") {
-            writeStderr("returning initialize result (method match)\n");
             return this.buildInitializeResult(id);
         }
         let hasParams = req != false && req.params != false;
         let hasProtocol = false;
         if (hasParams && req.params.protocolVersion != false) { hasProtocol = true; }
         if (hasProtocol) {
-            writeStderr("returning initialize result (params.protocolVersion)\n");
             return this.buildInitializeResult(id);
         }
-        writeStderr("returning pong\n");
         return this.buildResponse(id, "pong");
     }
 

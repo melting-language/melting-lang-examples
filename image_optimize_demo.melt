@@ -1,0 +1,23 @@
+// Requires extension = image_optimize in melt.ini / melt.config
+// Build module first: make modules
+
+print("imageOptimizeVersion: " + imageOptimizeVersion());
+
+// Update input path to an existing image in your project.
+let inputPath = "uploads/source.jpg";
+let optimizedPath = "uploads/source_optimized.jpg";
+let resizedPath = "uploads/source_800x600.jpg";
+
+let ok1 = optimizeImage(inputPath, optimizedPath, 80);
+if (ok1) {
+    print("Optimized image written: " + optimizedPath);
+} else {
+    print("optimizeImage failed (check input path/tool availability).");
+}
+
+let ok2 = resizeImage(inputPath, resizedPath, 800, 600, 82);
+if (ok2) {
+    print("Resized image written: " + resizedPath);
+} else {
+    print("resizeImage failed (check input path/tool availability).");
+}

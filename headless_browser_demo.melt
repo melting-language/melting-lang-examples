@@ -1,0 +1,16 @@
+// Requires extension = headless_browser in melt.ini / melt.config
+// Build modules first: make modules
+
+print("headlessBrowserVersion: " + headlessBrowserVersion());
+
+if (!browserAvailable()) {
+    print("No supported browser found. Install Chrome/Chromium/Edge.");
+} else {
+    let ok1 = browserScreenshot("https://xelenic.com", "examples/tmp/example.png", 1280, 720);
+    let ok2 = browserDumpDom("https://xelenic.com", "examples/tmp/example.html");
+    let ok3 = browserPdf("https://xelenic.com", "examples/tmp/example.pdf");
+
+    print("screenshot ok: " + ok1);
+    print("dump dom ok: " + ok2);
+    print("pdf ok: " + ok3);
+}

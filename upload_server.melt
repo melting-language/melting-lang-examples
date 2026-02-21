@@ -1,0 +1,29 @@
+class UploadApp {
+    method handle() {
+        let path = getRequestPath();
+        let reqMethod = getRequestMethod();
+
+        if (path == "/") {
+            setResponseContentType("text/html; charset=utf-8");
+            setResponseBody("<html><body><h1>Melt Upload</h1><form action=\"/upload\" method=\"POST\" enctype=\"multipart/form-data\"><input type=\"file\" name=\"file\"><button type=\"submit\">Upload</button></form></body></html>");
+            setResponseStatus(200);
+        } else if (path == "/upload" && reqMethod == "POST") {
+            let ok = uploadSave("file", "uploads/upload.bin");
+            if (ok) {
+                let fname = uploadFileName("file");
+                setResponseBody("Uploaded: " + fname + " -> examples/uploads/upload.bin");
+                setResponseStatus(200);
+            } else {
+                setResponseBody("Upload failed. Ensure multipart/form-data field name is 'file'.");
+                setResponseStatus(400);
+            }
+        } else {
+            setResponseBody("Not found");
+            setResponseStatus(404);
+        }
+    }
+}
+
+setHandler("UploadApp");
+print "Upload server on http://localhost:8080";
+listen(8080);

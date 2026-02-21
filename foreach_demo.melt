@@ -1,0 +1,41 @@
+// Foreach over array, object, and SQL rows
+// Run:
+//   ./bin/melt examples/foreach_demo.melt
+//   make with-sqlite && ./bin/melt examples/foreach_demo.melt
+
+print("Array values:");
+let nums = [10, 20, 30];
+foreach (value in nums) {
+    print(value);
+}
+
+print("Array index + value:");
+foreach (idx, value in nums) {
+    print(idx + ": " + value);
+}
+
+print("Object key + value:");
+let user = objectCreate();
+user.name = "Melt";
+user.role = "lang";
+foreach (key, value in user) {
+    print(key + "=" + value);
+}
+
+print("SQL rows (requires with-sqlite):");
+let ok = sqliteOpen("examples/foreach_demo.sqlite");
+if (ok) {
+    sqliteExec("CREATE TABLE IF NOT EXISTS people (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)");
+    sqliteExec("DELETE FROM people");
+    sqliteExec("INSERT INTO people(name) VALUES ('Alice')");
+    sqliteExec("INSERT INTO people(name) VALUES ('Bob')");
+    if (sqliteQuery("SELECT id, name FROM people ORDER BY id")) {
+        let rows = sqliteFetchAll();
+        foreach (row in rows) {
+            print("id=" + row[0] + ", name=" + row[1]);
+        }
+    }
+    sqliteClose();
+} else {
+    print("sqliteOpen failed; build with: make with-sqlite");
+}
