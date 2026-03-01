@@ -1,0 +1,50 @@
+// QR code demo. Run: make with-qr && ./bin/melt examples/qr_demo.melt
+// Then open http://localhost:8766/ — enter text and click Generate to see the QR code.
+// Requires libqrencode (e.g. brew install qrencode on macOS).
+
+class App {
+    method handle() {
+        let path = getRequestPath();
+        let reqMethod = getRequestMethod();
+        if (path != "/" && path != "") {
+            setResponseStatus(404);
+            setResponseBody("<html><body><h1>404</h1><p>Not found. Try <a href=\"/\">/</a></p></body></html>");
+            return;
+        }
+        let text = "Melt QR Demo";
+        if (reqMethod == "POST") {
+            let body = getRequestBody();
+            let parts = splitString(body, "&");
+            let i = 0;
+            while (i < arrayLength(parts)) {
+                let part = arrayGet(parts, i);
+                let pair = splitString(part, "=");
+                if (arrayLength(pair) >= 2 && arrayGet(pair, 0) == "text") {
+                    text = urlDecode(arrayGet(pair, 1));
+                    i = arrayLength(parts);
+                }
+                i = i + 1;
+            }
+        }
+        let svg = "";
+        try {
+            svg = qrGenerate(text, 5);
+        } catch (e) {
+            svg = "";
+        }
+        if (svg == "") {
+            setResponseContentType("text/html; charset=utf-8");
+            setResponseBody("<html><body><h1>QR Demo</h1><p>qrGenerate is not available. Build with: <code>make with-qr</code> (requires libqrencode).</p><p><a href=\"/\">Back</a></p></body></html>");
+            setResponseStatus(200);
+            return;
+        }
+        let safe = escapeHtml(text);
+        setResponseContentType("text/html; charset=utf-8");
+        setResponseBody("<html><head><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>QR Demo</title><style>body{font-family:system-ui,sans-serif;max-width:420px;margin:2rem auto;padding:1rem;background:#1e293b;color:#e2e8f0;}h1{font-size:1.5rem;} .qr{background:#fff;padding:1rem;border-radius:8px;display:inline-block;margin:1rem 0;} form{margin:1rem 0;} input[type=text]{width:100%;padding:0.5rem;border-radius:4px;border:1px solid #64748b;box-sizing:border-box;} button{margin-top:0.5rem;padding:0.5rem 1rem;background:#38bdf8;color:#0f172a;border:none;border-radius:4px;cursor:pointer;} a{color:#38bdf8;} code{background:#334155;padding:0.2em 0.4em;border-radius:4px;}</style></head><body><h1>QR code demo</h1><p>Encoded text:</p><p><strong>" + safe + "</strong></p><div class=\"qr\">" + svg + "</div><form method=\"post\" action=\"/\"><input type=\"text\" name=\"text\" placeholder=\"Enter text or URL\" value=\"" + safe + "\"/><br/><button type=\"submit\">Generate QR</button></form><p>Run with <code>make with-qr</code>. <a href=\"/\">Reset</a></p></body></html>");
+        setResponseStatus(200);
+    }
+}
+
+setHandler("App");
+print "QR demo: http://localhost:8766/ (requires make with-qr)";
+listen(8766);
