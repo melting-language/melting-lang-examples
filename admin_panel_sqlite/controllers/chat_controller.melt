@@ -1,0 +1,37 @@
+import "../views/layout.melt";
+import "../db.melt";
+
+class ChatController {
+    method index() {
+        if (getCookie("admin_session") != "1") {
+            setResponseStatus(302);
+            setResponseHeader("Location", "/login");
+            setResponseBody("");
+            return;
+        }
+        Db().ensureDb();
+        let view = View();
+        view.renderChat();
+        setResponseBody(view.output);
+        setResponseContentType("text/html; charset=utf-8");
+        setResponseStatus(200);
+    }
+
+    // SSE endpoint: stream events using streamChunk (Transfer-Encoding: chunked).
+    // If not logged in, send one error event then close (so client gets a message instead of a redirect).
+    method events() {
+        setResponseContentType("text/event-stream");
+        setResponseStatus(200);
+        setResponseHeader("Cache-Control", "no-cache");
+        setResponseHeader("Connection", "keep-alive");
+        if (getCookie("admin_session") != "1") {
+            streamChunk("event: error\ndata: " + jsonEncode("Please log in to use chat.") + "\n\n");
+            return;
+        }
+        streamChunk("data: " + jsonEncode("connected") + "\n\n");
+        streamChunk("data: " + jsonEncode("Welcome to the admin chat. Messages stream in real time.") + "\n\n");
+        streamChunk("event: join\ndata: " + jsonEncode("You joined the chat.") + "\n\n");
+        streamChunk("data: " + jsonEncode("Server: Use the input below to send a message (demo).") + "\n\n");
+        streamChunk("data: " + jsonEncode("Server: Chat is powered by Melt streamChunk (SSE).") + "\n\n");
+    }
+}

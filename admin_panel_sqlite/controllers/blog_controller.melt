@@ -1,0 +1,135 @@
+import "../views/layout.melt";
+import "../db.melt";
+
+class BlogController {
+    method requireAuth() {
+        if (getCookie("admin_session") != "1") {
+            setResponseStatus(302);
+            setResponseHeader("Location", "/login");
+            setResponseBody("");
+            return false;
+        }
+        return true;
+    }
+
+    method parseFormBody() {
+        let bodyStr = getRequestBody();
+        let out = objectCreate();
+        out.title = "";
+        out.content = "";
+        out.author = "";
+        out.status = "draft";
+        out.id = "";
+        let parts = splitString(bodyStr, "&");
+        let i = 0;
+        while (i < arrayLength(parts)) {
+            let part = arrayGet(parts, i);
+            let pair = splitString(part, "=");
+            if (arrayLength(pair) >= 2) {
+                let key = arrayGet(pair, 0);
+                let val = arrayGet(pair, 1);
+                let j = 2;
+                while (j < arrayLength(pair)) {
+                    val = val + "=" + arrayGet(pair, j);
+                    j = j + 1;
+                }
+                val = urlDecode(val);
+                if (key == "title") out.title = val;
+                else if (key == "content") out.content = val;
+                else if (key == "author") out.author = val;
+                else if (key == "status") out.status = val;
+                else if (key == "id") out.id = val;
+            }
+            i = i + 1;
+        }
+        return out;
+    }
+
+    method index() {
+        if (!BlogController().requireAuth()) return;
+        Db().ensureDb();
+        let posts = Db().getPosts();
+        let view = View();
+        view.renderBlogList(posts);
+        setResponseBody(view.output);
+        setResponseContentType("text/html; charset=utf-8");
+        setResponseStatus(200);
+    }
+
+    method newForm() {
+        if (!BlogController().requireAuth()) return;
+        let view = View();
+        view.renderPostForm("", "", "", getCookie("admin_username"), "draft");
+        setResponseBody(view.output);
+        setResponseContentType("text/html; charset=utf-8");
+        setResponseStatus(200);
+    }
+
+    method create() {
+        if (!BlogController().requireAuth()) return;
+        if (getRequestMethod() != "POST") {
+            BlogController().newForm();
+            return;
+        }
+        let f = BlogController().parseFormBody();
+        if (f.title == "") {
+            setResponseStatus(302);
+            setResponseHeader("Location", "/dashboard/blog/new");
+            setResponseBody("");
+            return;
+        }
+        Db().ensureDb();
+        Db().createPost(f.title, f.content, f.author, f.status);
+        setResponseStatus(302);
+        setResponseHeader("Location", "/dashboard/blog");
+        setResponseBody("");
+    }
+
+    method editForm(postId) {
+        if (!BlogController().requireAuth()) return;
+        let row = Db().getPost(postId);
+        if (arrayLength(row) < 6) {
+            setResponseStatus(302);
+            setResponseHeader("Location", "/dashboard/blog");
+            setResponseBody("");
+            return;
+        }
+        let view = View();
+        view.renderPostForm(postId, arrayGet(row, 1), arrayGet(row, 2), arrayGet(row, 3), arrayGet(row, 4));
+        setResponseBody(view.output);
+        setResponseContentType("text/html; charset=utf-8");
+        setResponseStatus(200);
+    }
+
+    method update() {
+        if (!BlogController().requireAuth()) return;
+        if (getRequestMethod() != "POST") {
+            BlogController().index();
+            return;
+        }
+        let f = BlogController().parseFormBody();
+        if (f.id == "" || f.title == "") {
+            setResponseStatus(302);
+            setResponseHeader("Location", "/dashboard/blog");
+            setResponseBody("");
+            return;
+        }
+        Db().updatePost(f.id, f.title, f.content, f.author, f.status);
+        setResponseStatus(302);
+        setResponseHeader("Location", "/dashboard/blog");
+        setResponseBody("");
+    }
+
+    method delete() {
+        if (!BlogController().requireAuth()) return;
+        if (getRequestMethod() != "POST") {
+            BlogController().index();
+            return;
+        }
+        let f = BlogController().parseFormBody();
+        if (f.id != "") Db().deletePost(f.id);
+        setResponseStatus(302);
+        setResponseHeader("Location", "/dashboard/blog");
+        setResponseBody("");
+    }
+}

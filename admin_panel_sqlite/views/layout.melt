@@ -1,0 +1,323 @@
+import "../config.melt";
+
+class ViewData {
+    method init() {}
+}
+
+class View {
+    method init() {
+        this.output = "";
+    }
+
+    method getNavbarHtml() {
+        let navUser = getCookie("admin_username");
+        if (navUser == "") navUser = "Admin";
+        return "<li class=\"nav-item dropdown\"><a class=\"nav-link dropdown-toggle d-flex align-items-center\" href=\"#\" role=\"button\" data-bs-toggle=\"dropdown\" aria-expanded=\"false\"><i class=\"fa fa-user-circle me-2\"></i><span>" + navUser + "</span></a><ul class=\"dropdown-menu dropdown-menu-end\"><li class=\"px-3 py-2\"><span class=\"text-muted small\"><i class=\"fa fa-user me-1\"></i>Logged in as <strong>" + navUser + "</strong></span></li><li><hr class=\"dropdown-divider\"></li><li><a class=\"dropdown-item\" href=\"/dashboard\"><i class=\"fa fa-tachometer me-2\"></i>Dashboard</a></li><li><a class=\"dropdown-item\" href=\"/dashboard/users\"><i class=\"fa fa-users me-2\"></i>Users</a></li><li><a class=\"dropdown-item\" href=\"/dashboard/products\"><i class=\"fa fa-cube me-2\"></i>Products</a></li><li><a class=\"dropdown-item\" href=\"/dashboard/categories\"><i class=\"fa fa-folder me-2\"></i>Categories</a></li><li><a class=\"dropdown-item\" href=\"/dashboard/blog\"><i class=\"fa fa-file-text-o me-2\"></i>Blog</a></li><li><a class=\"dropdown-item\" href=\"/dashboard/chat\"><i class=\"fa fa-comments me-2\"></i>Chat</a></li><li><hr class=\"dropdown-divider\"></li><li><a class=\"dropdown-item text-danger\" href=\"/logout\"><i class=\"fa fa-sign-out me-2\"></i>Log out</a></li></ul></li>";
+    }
+
+    method renderLogin(errorHtml) {
+        let data = ViewData();
+        data.errorHtml = errorHtml;
+        let body = renderView("views/login.html", data);
+        let layoutData = ViewData();
+        layoutData.title = "Login — " + app.name;
+        layoutData.brand = app.name;
+        layoutData.content = body;
+        layoutData.navbar = "";
+        this.output = renderView("views/layout.html", layoutData);
+    }
+
+    method renderDashboard(users, adminCount, productCount, categoryCount) {
+        let rows = "";
+        let i = 0;
+        while (i < arrayLength(users)) {
+            let row = arrayGet(users, i);
+            let id = arrayGet(row, 0);
+            let uname = arrayGet(row, 1);
+            rows = rows + "<tr><td>" + id + "</td><td>" + uname + "</td></tr>";
+            i = i + 1;
+        }
+        let data = ViewData();
+        data.usersTable = rows;
+        data.adminCount = adminCount;
+        data.productCount = productCount;
+        data.categoryCount = categoryCount;
+        let body = renderView("views/dashboard.html", data);
+        let sidebarHtml = renderView("views/sidebar.html", ViewData());
+        let layoutData = ViewData();
+        layoutData.title = "Dashboard — " + app.name;
+        layoutData.brand = app.name;
+        layoutData.content = body;
+        layoutData.sidebar = sidebarHtml;
+        layoutData.navbar = this.getNavbarHtml();
+        this.output = renderView("views/layout_dashboard.html", layoutData);
+    }
+
+    method renderChat() {
+        let data = ViewData();
+        let body = renderView("views/chat.html", data);
+        let sidebarHtml = renderView("views/sidebar.html", ViewData());
+        let layoutData = ViewData();
+        layoutData.title = "Chat — " + app.name;
+        layoutData.brand = app.name;
+        layoutData.content = body;
+        layoutData.sidebar = sidebarHtml;
+        layoutData.navbar = this.getNavbarHtml();
+        this.output = renderView("views/layout_dashboard.html", layoutData);
+    }
+
+    method renderNotFound(path) {
+        let data = ViewData();
+        data.path = path;
+        let body = renderView("views/404.html", data);
+        let layoutData = ViewData();
+        layoutData.title = "Not found";
+        layoutData.brand = app.name;
+        layoutData.content = body;
+        layoutData.navbar = "";
+        this.output = renderView("views/layout.html", layoutData);
+    }
+
+    method renderProductList(products) {
+        let rows = "";
+        let i = 0;
+        while (i < arrayLength(products)) {
+            let row = arrayGet(products, i);
+            let id = arrayGet(row, 0);
+            let name = arrayGet(row, 1);
+            let price = arrayGet(row, 2);
+            let desc = arrayGet(row, 3);
+            let img = arrayGet(row, 4);
+            let imgHtml = "<span class=\"text-muted\">—</span>";
+            if (img != "") {
+                imgHtml = "<img src=\"/uploads/" + img + "\" alt=\"\" style=\"max-height:40px; max-width:60px; object-fit:contain;\">";
+            }
+            rows = rows + "<tr><td>" + id + "</td><td>" + imgHtml + "</td><td>" + name + "</td><td>" + price + "</td><td>" + desc + "</td><td><a class=\"btn btn-sm btn-primary\" href=\"/dashboard/products/edit?id=" + id + "\">Edit</a> <form method=\"post\" action=\"/dashboard/products/delete\" style=\"display:inline\"><input type=\"hidden\" name=\"id\" value=\"" + id + "\"><button type=\"submit\" class=\"btn btn-sm btn-danger\">Delete</button></form></td></tr>";
+            i = i + 1;
+        }
+        let data = ViewData();
+        data.productsTable = rows;
+        let body = renderView("views/products_list.html", data);
+        let sidebarHtml = renderView("views/sidebar.html", ViewData());
+        let layoutData = ViewData();
+        layoutData.title = "Products — " + app.name;
+        layoutData.brand = app.name;
+        layoutData.content = body;
+        layoutData.sidebar = sidebarHtml;
+        layoutData.navbar = this.getNavbarHtml();
+        this.output = renderView("views/layout_dashboard.html", layoutData);
+    }
+
+    method renderProductForm(productId, name, price, description, imagePath, categoryId, categories) {
+        let data = ViewData();
+        data.productId = productId;
+        data.productName = name;
+        data.productPrice = price;
+        data.productDescription = description;
+        data.productImageUrl = "";
+        data.productImageName = imagePath;
+        data.currentImageHtml = "";
+        if (imagePath != "") {
+            data.productImageUrl = "/uploads/" + imagePath;
+            data.currentImageHtml = "<p class=\"mt-2 mb-0\"><small class=\"text-muted\">Current:</small> <img src=\"/uploads/" + imagePath + "\" alt=\"\" style=\"max-height:80px; max-width:120px; object-fit:contain;\"></p>";
+        }
+        let opts = "<select class=\"form-select\" id=\"category_id\" name=\"category_id\"><option value=\"0\">-- No category --</option>";
+        let i = 0;
+        while (i < arrayLength(categories)) {
+            let row = arrayGet(categories, i);
+            let cid = arrayGet(row, 0);
+            let cname = arrayGet(row, 1);
+            let sel = "";
+            if (cid == categoryId || cid == categoryId + "" || categoryId + "" == cid + "") sel = " selected";
+            opts = opts + "<option value=\"" + cid + "\"" + sel + ">" + cname + "</option>";
+            i = i + 1;
+        }
+        opts = opts + "</select>";
+        data.categoryDropdown = opts;
+        if (productId == "") {
+            data.formAction = "/dashboard/products";
+            data.formTitle = "Add product";
+            data.hiddenIdField = "";
+        } else {
+            data.formAction = "/dashboard/products/update";
+            data.formTitle = "Edit product";
+            data.hiddenIdField = "<input type=\"hidden\" name=\"id\" value=\"" + productId + "\">";
+        }
+        let body = renderView("views/product_form.html", data);
+        let sidebarHtml = renderView("views/sidebar.html", ViewData());
+        let layoutData = ViewData();
+        if (productId == "") {
+            layoutData.title = "New product — " + app.name;
+        } else {
+            layoutData.title = "Edit product — " + app.name;
+        }
+        layoutData.brand = app.name;
+        layoutData.content = body;
+        layoutData.sidebar = sidebarHtml;
+        layoutData.navbar = this.getNavbarHtml();
+        this.output = renderView("views/layout_dashboard.html", layoutData);
+    }
+
+    method renderUserList(users) {
+        let rows = "";
+        let i = 0;
+        while (i < arrayLength(users)) {
+            let row = arrayGet(users, i);
+            let id = arrayGet(row, 0);
+            let uname = arrayGet(row, 1);
+            rows = rows + "<tr><td>" + id + "</td><td>" + uname + "</td><td class=\"text-end\"><a class=\"btn btn-sm btn-primary\" href=\"/dashboard/users/edit?id=" + id + "\">Edit</a> <form method=\"post\" action=\"/dashboard/users/delete\" style=\"display:inline\"><input type=\"hidden\" name=\"id\" value=\"" + id + "\"><button type=\"submit\" class=\"btn btn-sm btn-danger\">Delete</button></form></td></tr>";
+            i = i + 1;
+        }
+        let data = ViewData();
+        data.usersTable = rows;
+        let body = renderView("views/users_list.html", data);
+        let sidebarHtml = renderView("views/sidebar.html", ViewData());
+        let layoutData = ViewData();
+        layoutData.title = "Users — " + app.name;
+        layoutData.brand = app.name;
+        layoutData.content = body;
+        layoutData.sidebar = sidebarHtml;
+        layoutData.navbar = this.getNavbarHtml();
+        this.output = renderView("views/layout_dashboard.html", layoutData);
+    }
+
+    method renderUserForm(userId, formUsername, passwordPlaceholder, formTitle, formAction, hiddenIdField) {
+        let data = ViewData();
+        data.userId = userId;
+        data.userName = formUsername;
+        data.passwordPlaceholder = passwordPlaceholder;
+        data.formTitle = formTitle;
+        data.formAction = formAction;
+        data.hiddenIdField = hiddenIdField;
+        data.passwordRequiredAttr = "";
+        if (userId == "") data.passwordRequiredAttr = " required";
+        let body = renderView("views/user_form.html", data);
+        let sidebarHtml = renderView("views/sidebar.html", ViewData());
+        let layoutData = ViewData();
+        if (userId == "") {
+            layoutData.title = "New user — " + app.name;
+        } else {
+            layoutData.title = "Edit user — " + app.name;
+        }
+        layoutData.brand = app.name;
+        layoutData.content = body;
+        layoutData.sidebar = sidebarHtml;
+        layoutData.navbar = this.getNavbarHtml();
+        this.output = renderView("views/layout_dashboard.html", layoutData);
+    }
+
+    method renderCategoryList(categories) {
+        let rows = "";
+        let i = 0;
+        while (i < arrayLength(categories)) {
+            let row = arrayGet(categories, i);
+            let id = arrayGet(row, 0);
+            let name = arrayGet(row, 1);
+            let desc = arrayGet(row, 2);
+            rows = rows + "<tr><td>" + id + "</td><td>" + name + "</td><td>" + desc + "</td><td><a class=\"btn btn-sm btn-primary\" href=\"/dashboard/categories/edit?id=" + id + "\">Edit</a> <form method=\"post\" action=\"/dashboard/categories/delete\" style=\"display:inline\"><input type=\"hidden\" name=\"id\" value=\"" + id + "\"><button type=\"submit\" class=\"btn btn-sm btn-danger\">Delete</button></form></td></tr>";
+            i = i + 1;
+        }
+        let data = ViewData();
+        data.categoriesTable = rows;
+        let body = renderView("views/categories_list.html", data);
+        let sidebarHtml = renderView("views/sidebar.html", ViewData());
+        let layoutData = ViewData();
+        layoutData.title = "Categories — " + app.name;
+        layoutData.brand = app.name;
+        layoutData.content = body;
+        layoutData.sidebar = sidebarHtml;
+        layoutData.navbar = this.getNavbarHtml();
+        this.output = renderView("views/layout_dashboard.html", layoutData);
+    }
+
+    method renderCategoryForm(categoryId, name, description) {
+        let data = ViewData();
+        data.categoryId = categoryId;
+        data.categoryName = name;
+        data.categoryDescription = description;
+        if (categoryId == "") {
+            data.formAction = "/dashboard/categories";
+            data.formTitle = "Add category";
+            data.hiddenIdField = "";
+        } else {
+            data.formAction = "/dashboard/categories/update";
+            data.formTitle = "Edit category";
+            data.hiddenIdField = "<input type=\"hidden\" name=\"id\" value=\"" + categoryId + "\">";
+        }
+        let body = renderView("views/category_form.html", data);
+        let sidebarHtml = renderView("views/sidebar.html", ViewData());
+        let layoutData = ViewData();
+        if (categoryId == "") {
+            layoutData.title = "New category — " + app.name;
+        } else {
+            layoutData.title = "Edit category — " + app.name;
+        }
+        layoutData.brand = app.name;
+        layoutData.content = body;
+        layoutData.sidebar = sidebarHtml;
+        layoutData.navbar = this.getNavbarHtml();
+        this.output = renderView("views/layout_dashboard.html", layoutData);
+    }
+
+    method renderBlogList(posts) {
+        let rows = "";
+        let i = 0;
+        while (i < arrayLength(posts)) {
+            let row = arrayGet(posts, i);
+            let id = arrayGet(row, 0);
+            let title = arrayGet(row, 1);
+            let author = arrayGet(row, 2);
+            let status = arrayGet(row, 3);
+            let createdAt = arrayGet(row, 4);
+            let statusClass = "secondary";
+            if (status == "published") statusClass = "success";
+            rows = rows + "<tr><td>" + id + "</td><td>" + title + "</td><td>" + author + "</td><td><span class=\"badge bg-" + statusClass + "\">" + status + "</span></td><td>" + createdAt + "</td><td class=\"text-end\"><a class=\"btn btn-sm btn-primary\" href=\"/dashboard/blog/edit?id=" + id + "\">Edit</a> <form method=\"post\" action=\"/dashboard/blog/delete\" style=\"display:inline\"><input type=\"hidden\" name=\"id\" value=\"" + id + "\"><button type=\"submit\" class=\"btn btn-sm btn-danger\">Delete</button></form></td></tr>";
+            i = i + 1;
+        }
+        let data = ViewData();
+        data.postsTable = rows;
+        let body = renderView("views/blog_list.html", data);
+        let sidebarHtml = renderView("views/sidebar.html", ViewData());
+        let layoutData = ViewData();
+        layoutData.title = "Blog — " + app.name;
+        layoutData.brand = app.name;
+        layoutData.content = body;
+        layoutData.sidebar = sidebarHtml;
+        layoutData.navbar = this.getNavbarHtml();
+        this.output = renderView("views/layout_dashboard.html", layoutData);
+    }
+
+    method renderPostForm(postId, title, content, author, status) {
+        let data = ViewData();
+        data.postId = postId;
+        data.postTitle = title;
+        data.postContent = content;
+        data.postAuthor = author;
+        data.statusDropdown = "<select class=\"form-select\" id=\"status\" name=\"status\"><option value=\"draft\">Draft</option><option value=\"published\">Published</option></select>";
+        if (status == "published") {
+            data.statusDropdown = "<select class=\"form-select\" id=\"status\" name=\"status\"><option value=\"draft\">Draft</option><option value=\"published\" selected>Published</option></select>";
+        }
+        if (postId == "") {
+            data.formAction = "/dashboard/blog";
+            data.formTitle = "New post";
+            data.hiddenIdField = "";
+        } else {
+            data.formAction = "/dashboard/blog/update";
+            data.formTitle = "Edit post";
+            data.hiddenIdField = "<input type=\"hidden\" name=\"id\" value=\"" + postId + "\">";
+        }
+        let body = renderView("views/post_form.html", data);
+        let sidebarHtml = renderView("views/sidebar.html", ViewData());
+        let layoutData = ViewData();
+        if (postId == "") {
+            layoutData.title = "New post — " + app.name;
+        } else {
+            layoutData.title = "Edit post — " + app.name;
+        }
+        layoutData.brand = app.name;
+        layoutData.content = body;
+        layoutData.sidebar = sidebarHtml;
+        layoutData.navbar = this.getNavbarHtml();
+        this.output = renderView("views/layout_dashboard.html", layoutData);
+    }
+}

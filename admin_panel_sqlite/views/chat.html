@@ -1,0 +1,81 @@
+<div class="card card-admin">
+  <div class="card-header d-flex align-items-center">
+    <i class="fa fa-comments me-2"></i> Chat <span class="badge bg-success ms-2">Live</span>
+  </div>
+  <div class="card-body">
+    <p class="text-muted small mb-3">Messages stream from the server via Server-Sent Events (Melt <code>streamChunk</code>). The stream sends a few events and then closes—reload to see it again.</p>
+    <div id="chat-messages" class="border rounded p-3 bg-light" style="min-height: 220px; max-height: 320px; overflow-y: auto; font-family: monospace; font-size: 0.875rem;"></div>
+    <div class="mt-3 d-flex gap-2">
+      <input type="text" id="chat-input" class="form-control" placeholder="Type a message (local demo)..." autocomplete="off">
+      <button type="button" id="chat-send" class="btn btn-admin-primary">Send</button>
+    </div>
+    <p class="text-muted small mt-2 mb-0"><strong>Reload</strong> the page to see the stream again.</p>
+  </div>
+</div>
+<script>
+(function() {
+  var el = document.getElementById('chat-messages');
+  var input = document.getElementById('chat-input');
+  var sendBtn = document.getElementById('chat-send');
+  function addLine(text, isEvent) {
+    var p = document.createElement('p');
+    p.className = 'mb-1' + (isEvent ? ' text-primary' : '');
+    p.innerHTML = text;
+    el.appendChild(p);
+    el.scrollTop = el.scrollHeight;
+  }
+  function parseSSE(text) {
+    var lines = text.split('\n');
+    var i = 0;
+    while (i < lines.length) {
+      var eventType = '';
+      var data = '';
+      while (i < lines.length) {
+        var line = lines[i];
+        i++;
+        if (line.indexOf('event: ') === 0) eventType = line.slice(7).trim();
+        else if (line.indexOf('data: ') === 0) data = line.slice(6);
+        else if (line === '') break;
+      }
+      if (data !== '') {
+        try {
+          var parsed = JSON.parse(data);
+          var msg = typeof parsed === 'string' ? parsed : JSON.stringify(parsed);
+          addLine(msg + (eventType === 'error' ? ' <a href="/login">Log in</a>' : ''), eventType === 'error' || eventType === 'join');
+        } catch (err) {
+          addLine(data + (eventType === 'error' ? ' <a href="/login">Log in</a>' : ''), eventType === 'error');
+        }
+      }
+    }
+  }
+  fetch('/dashboard/chat/events', { credentials: 'include' })
+    .then(function(r) {
+      if (!r.ok) {
+        addLine('Connection failed (' + r.status + '). <a href="/login">Log in</a> and reload.', true);
+        return null;
+      }
+      return r.text();
+    })
+    .then(function(text) {
+      if (text) {
+        parseSSE(text);
+        addLine('Stream ended. Reload page to see again.', true);
+      }
+    })
+    .catch(function() {
+      addLine('Connection failed. <a href="/login">Log in</a> and reload the chat page.', true);
+    });
+  sendBtn.addEventListener('click', function() {
+    var msg = input.value.trim();
+    if (msg) {
+      addLine('You: ' + msg, false);
+      input.value = '';
+    }
+  });
+  input.addEventListener('keydown', function(ev) {
+    if (ev.key === 'Enter') {
+      sendBtn.click();
+    }
+  });
+})();
+</script>

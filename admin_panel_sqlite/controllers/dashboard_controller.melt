@@ -1,0 +1,25 @@
+import "../views/layout.melt";
+import "../db.melt";
+
+class DashboardController {
+    method index() {
+        if (getCookie("admin_session") != "1") {
+            setResponseStatus(302);
+            setResponseHeader("Location", "/login");
+            setResponseBody("");
+            return;
+        }
+        Db().ensureDb();
+        let users = Db().getUsers();
+        let products = Db().getProducts();
+        let categories = Db().getCategories();
+        let adminCount = arrayLength(users);
+        let productCount = arrayLength(products);
+        let categoryCount = arrayLength(categories);
+        let view = View();
+        view.renderDashboard(users, adminCount, productCount, categoryCount);
+        setResponseBody(view.output);
+        setResponseContentType("text/html; charset=utf-8");
+        setResponseStatus(200);
+    }
+}

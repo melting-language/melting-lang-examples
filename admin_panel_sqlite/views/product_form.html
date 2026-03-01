@@ -1,0 +1,33 @@
+<div class="card card-admin">
+  <div class="card-body">
+    <h2 class="h5 fw-600 mb-4">{{ formTitle }}</h2>
+    <form method="post" action="{{ formAction }}" enctype="multipart/form-data">
+      {!! hiddenIdField !!}
+      <div class="mb-3">
+        <label for="image" class="form-label">Image</label>
+        <input type="file" class="form-control" id="image" name="image" accept="image/jpeg,image/png,image/gif,image/webp">
+        {!! currentImageHtml !!}
+      </div>
+      <div class="mb-3">
+        <label for="name" class="form-label">Name</label>
+        <input type="text" class="form-control" id="name" name="name" value="{{ productName }}" required>
+      </div>
+      <div class="mb-3">
+        <label for="category_id" class="form-label">Category</label>
+        {!! categoryDropdown !!}
+      </div>
+      <div class="mb-3">
+        <label for="price" class="form-label">Price</label>
+        <input type="text" class="form-control" id="price" name="price" value="{{ productPrice }}">
+      </div>
+      <div class="mb-3">
+        <label for="description" class="form-label">Description</label>
+        <textarea class="form-control" id="description" name="description" rows="3" placeholder="Optional description">{{ productDescription }}</textarea>
+      </div>
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-admin btn-admin-primary"><i class="fa fa-check me-1"></i> Save</button>
+        <a href="/dashboard/products" class="btn btn-outline-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>

@@ -1,0 +1,180 @@
+import "../views/layout.melt";
+import "../db.melt";
+
+class ProductsController {
+    method requireAuth() {
+        if (getCookie("admin_session") != "1") {
+            setResponseStatus(302);
+            setResponseHeader("Location", "/login");
+            setResponseBody("");
+            return false;
+        }
+        return true;
+    }
+
+    method parseFormBody() {
+        let bodyStr = getRequestBody();
+        let out = objectCreate();
+        out.name = "";
+        out.price = "";
+        out.description = "";
+        out.id = "";
+        out.category_id = "";
+        let parts = splitString(bodyStr, "&");
+        let i = 0;
+        while (i < arrayLength(parts)) {
+            let part = arrayGet(parts, i);
+            let pair = splitString(part, "=");
+            if (arrayLength(pair) >= 2) {
+                let key = arrayGet(pair, 0);
+                let val = arrayGet(pair, 1);
+                let j = 2;
+                while (j < arrayLength(pair)) {
+                    val = val + "=" + arrayGet(pair, j);
+                    j = j + 1;
+                }
+                val = urlDecode(val);
+                if (key == "name") out.name = val;
+                else if (key == "price") out.price = val;
+                else if (key == "description") out.description = val;
+                else if (key == "id") out.id = val;
+                else if (key == "category_id") out.category_id = val;
+            }
+            i = i + 1;
+        }
+        return out;
+    }
+
+    method parseForm() {
+        let ct = getRequestHeader("Content-Type");
+        let out = objectCreate();
+        out.name = "";
+        out.price = "";
+        out.description = "";
+        out.id = "";
+        out.category_id = "";
+        if (replaceString(ct, "multipart/form-data", "x") != ct) {
+            out.name = getMultipartField("name");
+            out.price = getMultipartField("price");
+            out.description = getMultipartField("description");
+            out.id = getMultipartField("id");
+            out.category_id = getMultipartField("category_id");
+        } else {
+            out = ProductsController().parseFormBody();
+        }
+        return out;
+    }
+
+    method getImageExtension(filename) {
+        let parts = splitString(filename, ".");
+        if (arrayLength(parts) >= 2) return arrayGet(parts, arrayLength(parts) - 1);
+        return "jpg";
+    }
+
+    method index() {
+        if (!ProductsController().requireAuth()) return;
+        Db().ensureDb();
+        let products = Db().getProducts();
+        let view = View();
+        view.renderProductList(products);
+        setResponseBody(view.output);
+        setResponseContentType("text/html; charset=utf-8");
+        setResponseStatus(200);
+    }
+
+    method newForm() {
+        if (!ProductsController().requireAuth()) return;
+        Db().ensureDb();
+        let categories = Db().getCategories();
+        let view = View();
+        view.renderProductForm("", "", "", "", "", "", categories);
+        setResponseBody(view.output);
+        setResponseContentType("text/html; charset=utf-8");
+        setResponseStatus(200);
+    }
+
+    method create() {
+        if (!ProductsController().requireAuth()) return;
+        if (getRequestMethod() != "POST") {
+            ProductsController().newForm();
+            return;
+        }
+        let f = ProductsController().parseForm();
+        Db().ensureDb();
+        let newId = Db().createProduct(f.name, f.price, f.description, "", f.category_id);
+        let imagePath = "";
+        if (uploadFileName("image") != "") {
+            let ext = ProductsController().getImageExtension(uploadFileName("image"));
+            let saveName = "product_" + newId + "." + ext;
+            if (uploadSave("image", "uploads/" + saveName)) {
+                imagePath = saveName;
+                Db().updateProductImage(newId, imagePath);
+            }
+        }
+        setResponseStatus(302);
+        setResponseHeader("Location", "/dashboard/products");
+        setResponseBody("");
+    }
+
+    method editForm(productId) {
+        if (!ProductsController().requireAuth()) return;
+        let row = Db().getProduct(productId);
+        if (arrayLength(row) < 6) {
+            setResponseStatus(302);
+            setResponseHeader("Location", "/dashboard/products");
+            setResponseBody("");
+            return;
+        }
+        Db().ensureDb();
+        let categories = Db().getCategories();
+        let view = View();
+        view.renderProductForm(productId, arrayGet(row, 1), arrayGet(row, 2), arrayGet(row, 3), arrayGet(row, 4), arrayGet(row, 5), categories);
+        setResponseBody(view.output);
+        setResponseContentType("text/html; charset=utf-8");
+        setResponseStatus(200);
+    }
+
+    method update() {
+        if (!ProductsController().requireAuth()) return;
+        if (getRequestMethod() != "POST") {
+            ProductsController().index();
+            return;
+        }
+        let f = ProductsController().parseForm();
+        if (f.id == "") {
+            setResponseStatus(302);
+            setResponseHeader("Location", "/dashboard/products");
+            setResponseBody("");
+            return;
+        }
+        let imagePath = "";
+        if (uploadFileName("image") != "") {
+            let ext = ProductsController().getImageExtension(uploadFileName("image"));
+            let saveName = "product_" + f.id + "." + ext;
+            if (uploadSave("image", "uploads/" + saveName)) {
+                imagePath = saveName;
+            }
+        }
+        if (imagePath == "") {
+            let row = Db().getProduct(f.id);
+            if (arrayLength(row) >= 6) imagePath = arrayGet(row, 4);
+        }
+        Db().updateProduct(f.id, f.name, f.price, f.description, imagePath, f.category_id);
+        setResponseStatus(302);
+        setResponseHeader("Location", "/dashboard/products");
+        setResponseBody("");
+    }
+
+    method delete() {
+        if (!ProductsController().requireAuth()) return;
+        if (getRequestMethod() != "POST") {
+            ProductsController().index();
+            return;
+        }
+        let f = ProductsController().parseForm();
+        if (f.id != "") Db().deleteProduct(f.id);
+        setResponseStatus(302);
+        setResponseHeader("Location", "/dashboard/products");
+        setResponseBody("");
+    }
+}

@@ -1,0 +1,155 @@
+import "controllers/login_controller.melt";
+import "controllers/dashboard_controller.melt";
+import "controllers/users_controller.melt";
+import "controllers/products_controller.melt";
+import "controllers/categories_controller.melt";
+import "controllers/blog_controller.melt";
+import "controllers/chat_controller.melt";
+import "controllers/not_found_controller.melt";
+
+class Router {
+    method dispatch(path, pathFull) {
+        if (pathFull == "") pathFull = path;
+        if (path == "/" || path == "/login") {
+            if (getRequestMethod() == "POST") {
+                LoginController().loginPost();
+            } else {
+                LoginController().index();
+            }
+        } else if (path == "/dashboard") {
+            DashboardController().index();
+        } else if (path == "/logout") {
+            LoginController().logout();
+        } else if (path == "/dashboard/users" && getRequestMethod() == "GET") {
+            UsersController().index();
+        } else if (path == "/dashboard/users/new") {
+            UsersController().newForm();
+        } else if (path == "/dashboard/users" && getRequestMethod() == "POST") {
+            UsersController().create();
+        } else if (path == "/dashboard/users/update" && getRequestMethod() == "POST") {
+            UsersController().update();
+        } else if (path == "/dashboard/users/delete" && getRequestMethod() == "POST") {
+            UsersController().delete();
+        } else if (path == "/dashboard/products" && getRequestMethod() == "GET") {
+            ProductsController().index();
+        } else if (path == "/dashboard/products/new") {
+            ProductsController().newForm();
+        } else if (path == "/dashboard/products" && getRequestMethod() == "POST") {
+            ProductsController().create();
+        } else if (path == "/dashboard/products/update" && getRequestMethod() == "POST") {
+            ProductsController().update();
+        } else if (path == "/dashboard/products/delete" && getRequestMethod() == "POST") {
+            ProductsController().delete();
+        } else if (path == "/dashboard/categories" && getRequestMethod() == "GET") {
+            CategoriesController().index();
+        } else if (path == "/dashboard/categories/new") {
+            CategoriesController().newForm();
+        } else if (path == "/dashboard/categories" && getRequestMethod() == "POST") {
+            CategoriesController().create();
+        } else if (path == "/dashboard/categories/update" && getRequestMethod() == "POST") {
+            CategoriesController().update();
+        } else if (path == "/dashboard/categories/delete" && getRequestMethod() == "POST") {
+            CategoriesController().delete();
+        } else if (path == "/dashboard/blog" && getRequestMethod() == "GET") {
+            BlogController().index();
+        } else if (path == "/dashboard/blog/new") {
+            BlogController().newForm();
+        } else if (path == "/dashboard/blog" && getRequestMethod() == "POST") {
+            BlogController().create();
+        } else if (path == "/dashboard/blog/update" && getRequestMethod() == "POST") {
+            BlogController().update();
+        } else if (path == "/dashboard/blog/delete" && getRequestMethod() == "POST") {
+            BlogController().delete();
+        } else if (path == "/dashboard/chat" && getRequestMethod() == "GET") {
+            ChatController().index();
+        } else if (path == "/dashboard/chat/events" && getRequestMethod() == "GET") {
+            ChatController().events();
+        } else {
+            let pathAndQuery = pathFull;
+            let pathParts = splitString(pathAndQuery, "?");
+            if (arrayLength(pathParts) >= 1 && arrayGet(pathParts, 0) == "/dashboard/products/edit") {
+                let id = "";
+                if (arrayLength(pathParts) >= 2) {
+                    let query = arrayGet(pathParts, 1);
+                    let params = splitString(query, "&");
+                    let j = 0;
+                    while (j < arrayLength(params)) {
+                        let param = arrayGet(params, j);
+                        let keyVal = splitString(param, "=");
+                        if (arrayLength(keyVal) >= 2 && arrayGet(keyVal, 0) == "id") {
+                            id = arrayGet(keyVal, 1);
+                        }
+                        j = j + 1;
+                    }
+                }
+                if (id != "") {
+                    ProductsController().editForm(id);
+                } else {
+                    NotFoundController().show(path);
+                }
+            } else if (arrayLength(pathParts) >= 1 && arrayGet(pathParts, 0) == "/dashboard/categories/edit") {
+                let id = "";
+                if (arrayLength(pathParts) >= 2) {
+                    let query = arrayGet(pathParts, 1);
+                    let params = splitString(query, "&");
+                    let j = 0;
+                    while (j < arrayLength(params)) {
+                        let param = arrayGet(params, j);
+                        let keyVal = splitString(param, "=");
+                        if (arrayLength(keyVal) >= 2 && arrayGet(keyVal, 0) == "id") {
+                            id = arrayGet(keyVal, 1);
+                        }
+                        j = j + 1;
+                    }
+                }
+                if (id != "") {
+                    CategoriesController().editForm(id);
+                } else {
+                    NotFoundController().show(path);
+                }
+            } else if (arrayLength(pathParts) >= 1 && arrayGet(pathParts, 0) == "/dashboard/users/edit") {
+                let id = "";
+                if (arrayLength(pathParts) >= 2) {
+                    let query = arrayGet(pathParts, 1);
+                    let params = splitString(query, "&");
+                    let j = 0;
+                    while (j < arrayLength(params)) {
+                        let param = arrayGet(params, j);
+                        let keyVal = splitString(param, "=");
+                        if (arrayLength(keyVal) >= 2 && arrayGet(keyVal, 0) == "id") {
+                            id = arrayGet(keyVal, 1);
+                        }
+                        j = j + 1;
+                    }
+                }
+                if (id != "") {
+                    UsersController().editForm(id);
+                } else {
+                    NotFoundController().show(path);
+                }
+            } else if (arrayLength(pathParts) >= 1 && arrayGet(pathParts, 0) == "/dashboard/blog/edit") {
+                let id = "";
+                if (arrayLength(pathParts) >= 2) {
+                    let query = arrayGet(pathParts, 1);
+                    let params = splitString(query, "&");
+                    let j = 0;
+                    while (j < arrayLength(params)) {
+                        let param = arrayGet(params, j);
+                        let keyVal = splitString(param, "=");
+                        if (arrayLength(keyVal) >= 2 && arrayGet(keyVal, 0) == "id") {
+                            id = arrayGet(keyVal, 1);
+                        }
+                        j = j + 1;
+                    }
+                }
+                if (id != "") {
+                    BlogController().editForm(id);
+                } else {
+                    NotFoundController().show(path);
+                }
+            } else {
+                NotFoundController().show(path);
+            }
+        }
+    }
+}

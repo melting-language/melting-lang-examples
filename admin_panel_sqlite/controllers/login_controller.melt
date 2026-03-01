@@ -1,0 +1,65 @@
+import "../views/layout.melt";
+import "../db.melt";
+
+class LoginController {
+    method index() {
+        if (getCookie("admin_session") == "1") {
+            setResponseStatus(302);
+            setResponseHeader("Location", "/dashboard");
+            setResponseBody("");
+            return;
+        }
+        let view = View();
+        view.renderLogin("");
+        setResponseBody(view.output);
+        setResponseContentType("text/html; charset=utf-8");
+        setResponseStatus(200);
+    }
+
+    method loginPost() {
+        let bodyStr = getRequestBody();
+        let loginName = "";
+        let password = "";
+        let parts = splitString(bodyStr, "&");
+        let i = 0;
+        while (i < arrayLength(parts)) {
+            let part = arrayGet(parts, i);
+            let pair = splitString(part, "=");
+            if (arrayLength(pair) >= 2) {
+                let key = arrayGet(pair, 0);
+                let val = arrayGet(pair, 1);
+                let j = 2;
+                while (j < arrayLength(pair)) {
+                    val = val + "=" + arrayGet(pair, j);
+                    j = j + 1;
+                }
+                val = urlDecode(val);
+                if (key == "username") loginName = val;
+                else if (key == "password") password = val;
+            }
+            i = i + 1;
+        }
+        Db().ensureDb();
+        if (Db().checkUser(loginName, password)) {
+            setCookie("admin_session", "1", "/", 86400, 0);
+            setCookie("admin_username", loginName, "/", 86400, 0);
+            setResponseStatus(302);
+            setResponseHeader("Location", "/dashboard");
+            setResponseBody("");
+            return;
+        }
+        let view = View();
+        view.renderLogin("<div class=\"alert alert-danger\">Invalid username or password.</div>");
+        setResponseBody(view.output);
+        setResponseContentType("text/html; charset=utf-8");
+        setResponseStatus(200);
+    }
+
+    method logout() {
+        setCookie("admin_session", "", "/", 0, 0);
+        setCookie("admin_username", "", "/", 0, 0);
+        setResponseStatus(302);
+        setResponseHeader("Location", "/login");
+        setResponseBody("");
+    }
+}

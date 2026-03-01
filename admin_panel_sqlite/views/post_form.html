@@ -1,0 +1,28 @@
+<div class="card card-admin">
+  <div class="card-body">
+    <h2 class="h5 fw-600 mb-4">{{ formTitle }}</h2>
+    <form method="post" action="{{ formAction }}">
+      {!! hiddenIdField !!}
+      <div class="mb-3">
+        <label for="title" class="form-label">Title</label>
+        <input type="text" class="form-control" id="title" name="title" value="{{ postTitle }}" placeholder="Post title" required>
+      </div>
+      <div class="mb-3">
+        <label for="author" class="form-label">Author</label>
+        <input type="text" class="form-control" id="author" name="author" value="{{ postAuthor }}" placeholder="Author name">
+      </div>
+      <div class="mb-3">
+        <label for="status" class="form-label">Status</label>
+        {!! statusDropdown !!}
+      </div>
+      <div class="mb-3">
+        <label for="content" class="form-label">Content</label>
+        <textarea class="form-control" id="content" name="content" rows="12" placeholder="Write your post content...">{{ postContent }}</textarea>
+      </div>
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-admin btn-admin-primary"><i class="fa fa-check me-1"></i> Save</button>
+        <a href="/dashboard/blog" class="btn btn-outline-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>

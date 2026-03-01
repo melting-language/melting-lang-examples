@@ -1,0 +1,125 @@
+import "../views/layout.melt";
+import "../db.melt";
+
+class CategoriesController {
+    method requireAuth() {
+        if (getCookie("admin_session") != "1") {
+            setResponseStatus(302);
+            setResponseHeader("Location", "/login");
+            setResponseBody("");
+            return false;
+        }
+        return true;
+    }
+
+    method parseFormBody() {
+        let bodyStr = getRequestBody();
+        let out = objectCreate();
+        out.name = "";
+        out.description = "";
+        out.id = "";
+        let parts = splitString(bodyStr, "&");
+        let i = 0;
+        while (i < arrayLength(parts)) {
+            let part = arrayGet(parts, i);
+            let pair = splitString(part, "=");
+            if (arrayLength(pair) >= 2) {
+                let key = arrayGet(pair, 0);
+                let val = arrayGet(pair, 1);
+                let j = 2;
+                while (j < arrayLength(pair)) {
+                    val = val + "=" + arrayGet(pair, j);
+                    j = j + 1;
+                }
+                val = urlDecode(val);
+                if (key == "name") out.name = val;
+                else if (key == "description") out.description = val;
+                else if (key == "id") out.id = val;
+            }
+            i = i + 1;
+        }
+        return out;
+    }
+
+    method index() {
+        if (!CategoriesController().requireAuth()) return;
+        Db().ensureDb();
+        let categories = Db().getCategories();
+        let view = View();
+        view.renderCategoryList(categories);
+        setResponseBody(view.output);
+        setResponseContentType("text/html; charset=utf-8");
+        setResponseStatus(200);
+    }
+
+    method newForm() {
+        if (!CategoriesController().requireAuth()) return;
+        let view = View();
+        view.renderCategoryForm("", "", "");
+        setResponseBody(view.output);
+        setResponseContentType("text/html; charset=utf-8");
+        setResponseStatus(200);
+    }
+
+    method create() {
+        if (!CategoriesController().requireAuth()) return;
+        if (getRequestMethod() != "POST") {
+            CategoriesController().newForm();
+            return;
+        }
+        let f = CategoriesController().parseFormBody();
+        Db().ensureDb();
+        Db().createCategory(f.name, f.description);
+        setResponseStatus(302);
+        setResponseHeader("Location", "/dashboard/categories");
+        setResponseBody("");
+    }
+
+    method editForm(categoryId) {
+        if (!CategoriesController().requireAuth()) return;
+        let row = Db().getCategory(categoryId);
+        if (arrayLength(row) < 3) {
+            setResponseStatus(302);
+            setResponseHeader("Location", "/dashboard/categories");
+            setResponseBody("");
+            return;
+        }
+        let view = View();
+        view.renderCategoryForm(categoryId, arrayGet(row, 1), arrayGet(row, 2));
+        setResponseBody(view.output);
+        setResponseContentType("text/html; charset=utf-8");
+        setResponseStatus(200);
+    }
+
+    method update() {
+        if (!CategoriesController().requireAuth()) return;
+        if (getRequestMethod() != "POST") {
+            CategoriesController().index();
+            return;
+        }
+        let f = CategoriesController().parseFormBody();
+        if (f.id == "") {
+            setResponseStatus(302);
+            setResponseHeader("Location", "/dashboard/categories");
+            setResponseBody("");
+            return;
+        }
+        Db().updateCategory(f.id, f.name, f.description);
+        setResponseStatus(302);
+        setResponseHeader("Location", "/dashboard/categories");
+        setResponseBody("");
+    }
+
+    method delete() {
+        if (!CategoriesController().requireAuth()) return;
+        if (getRequestMethod() != "POST") {
+            CategoriesController().index();
+            return;
+        }
+        let f = CategoriesController().parseFormBody();
+        if (f.id != "") Db().deleteCategory(f.id);
+        setResponseStatus(302);
+        setResponseHeader("Location", "/dashboard/categories");
+        setResponseBody("");
+    }
+}

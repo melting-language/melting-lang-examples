@@ -1,0 +1,12 @@
+// Admin panel config: app name, port, SQLite DB path.
+// Build Melt with SQLite: make with-sqlite
+
+class AppConfig {
+    method init() {
+        this.name = "Admin Panel";
+        this.port = 8080;
+        this.dbPath = "examples/admin_panel_sqlite/data.sqlite";
+    }
+}
+
+let app = AppConfig();

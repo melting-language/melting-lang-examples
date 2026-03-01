@@ -1,0 +1,142 @@
+import "../views/layout.melt";
+import "../db.melt";
+
+class UsersController {
+    method requireAuth() {
+        if (getCookie("admin_session") != "1") {
+            setResponseStatus(302);
+            setResponseHeader("Location", "/login");
+            setResponseBody("");
+            return false;
+        }
+        return true;
+    }
+
+    method parseFormBody() {
+        let bodyStr = getRequestBody();
+        let out = objectCreate();
+        out.username = "";
+        out.password = "";
+        out.id = "";
+        let parts = splitString(bodyStr, "&");
+        let i = 0;
+        while (i < arrayLength(parts)) {
+            let part = arrayGet(parts, i);
+            let pair = splitString(part, "=");
+            if (arrayLength(pair) >= 2) {
+                let key = arrayGet(pair, 0);
+                let val = arrayGet(pair, 1);
+                let j = 2;
+                while (j < arrayLength(pair)) {
+                    val = val + "=" + arrayGet(pair, j);
+                    j = j + 1;
+                }
+                val = urlDecode(val);
+                if (key == "username") out.username = val;
+                else if (key == "password") out.password = val;
+                else if (key == "id") out.id = val;
+            }
+            i = i + 1;
+        }
+        return out;
+    }
+
+    method index() {
+        if (!UsersController().requireAuth()) return;
+        Db().ensureDb();
+        let users = Db().getUsers();
+        let view = View();
+        view.renderUserList(users);
+        setResponseBody(view.output);
+        setResponseContentType("text/html; charset=utf-8");
+        setResponseStatus(200);
+    }
+
+    method newForm() {
+        if (!UsersController().requireAuth()) return;
+        let view = View();
+        view.renderUserForm("", "", "Enter password", "Add user", "/dashboard/users", "");
+        setResponseBody(view.output);
+        setResponseContentType("text/html; charset=utf-8");
+        setResponseStatus(200);
+    }
+
+    method create() {
+        if (!UsersController().requireAuth()) return;
+        if (getRequestMethod() != "POST") {
+            UsersController().newForm();
+            return;
+        }
+        let f = UsersController().parseFormBody();
+        if (f.username == "" || f.password == "") {
+            setResponseStatus(302);
+            setResponseHeader("Location", "/dashboard/users/new");
+            setResponseBody("");
+            return;
+        }
+        Db().ensureDb();
+        Db().createUser(f.username, f.password);
+        setResponseStatus(302);
+        setResponseHeader("Location", "/dashboard/users");
+        setResponseBody("");
+    }
+
+    method editForm(userId) {
+        if (!UsersController().requireAuth()) return;
+        let row = Db().getUser(userId);
+        if (arrayLength(row) < 3) {
+            setResponseStatus(302);
+            setResponseHeader("Location", "/dashboard/users");
+            setResponseBody("");
+            return;
+        }
+        let view = View();
+        view.renderUserForm(userId, arrayGet(row, 1), "Leave blank to keep current", "Edit user", "/dashboard/users/update", "<input type=\"hidden\" name=\"id\" value=\"" + userId + "\">");
+        setResponseBody(view.output);
+        setResponseContentType("text/html; charset=utf-8");
+        setResponseStatus(200);
+    }
+
+    method update() {
+        if (!UsersController().requireAuth()) return;
+        if (getRequestMethod() != "POST") {
+            UsersController().index();
+            return;
+        }
+        let f = UsersController().parseFormBody();
+        if (f.id == "" || f.username == "") {
+            setResponseStatus(302);
+            setResponseHeader("Location", "/dashboard/users");
+            setResponseBody("");
+            return;
+        }
+        let password = f.password;
+        if (password == "") {
+            let row = Db().getUser(f.id);
+            if (arrayLength(row) >= 3) password = arrayGet(row, 2);
+        }
+        if (password == "") {
+            setResponseStatus(302);
+            setResponseHeader("Location", "/dashboard/users");
+            setResponseBody("");
+            return;
+        }
+        Db().updateUser(f.id, f.username, password);
+        setResponseStatus(302);
+        setResponseHeader("Location", "/dashboard/users");
+        setResponseBody("");
+    }
+
+    method delete() {
+        if (!UsersController().requireAuth()) return;
+        if (getRequestMethod() != "POST") {
+            UsersController().index();
+            return;
+        }
+        let f = UsersController().parseFormBody();
+        if (f.id != "") Db().deleteUser(f.id);
+        setResponseStatus(302);
+        setResponseHeader("Location", "/dashboard/users");
+        setResponseBody("");
+    }
+}

@@ -1,0 +1,277 @@
+// SQLite helpers: ensure schema + demo user, check login, list users.
+// Requires: make with-sqlite
+
+import "config.melt";
+
+class Db {
+    method ensureDb() {
+        let ok = sqliteOpen(app.dbPath);
+        if (!ok) return;
+        sqliteExec("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT, password TEXT)");
+        sqliteExec("CREATE TABLE IF NOT EXISTS products (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, price TEXT, description TEXT, image TEXT, category_id INTEGER)");
+        sqliteExec("CREATE TABLE IF NOT EXISTS categories (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, description TEXT)");
+        sqliteExec("CREATE TABLE IF NOT EXISTS posts (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, content TEXT, author TEXT, status TEXT, created_at TEXT DEFAULT (datetime('now')))");
+        try {
+            sqliteExec("ALTER TABLE products ADD COLUMN image TEXT");
+        } catch (e) {}
+        try {
+            sqliteExec("ALTER TABLE products ADD COLUMN category_id INTEGER");
+        } catch (e) {}
+        if (sqliteQuery("SELECT id FROM users LIMIT 1")) {
+            let rows = sqliteFetchAll();
+            if (arrayLength(rows) == 0) {
+                sqliteExec("INSERT INTO users(username, password) VALUES ('admin', 'admin')");
+            }
+        }
+        sqliteClose();
+    }
+
+    method checkUser(usr, password) {
+        let ok = sqliteOpen(app.dbPath);
+        if (!ok) return false;
+        let found = false;
+        let q = "SELECT id FROM users WHERE username = '" + usr + "' AND password = '" + password + "'";
+        if (sqliteQuery(q)) {
+            let rows = sqliteFetchAll();
+            if (arrayLength(rows) > 0) found = true;
+        }
+        sqliteClose();
+        return found;
+    }
+
+    method getUsers() {
+        let ok = sqliteOpen(app.dbPath);
+        let list = [];
+        if (!ok) return list;
+        if (sqliteQuery("SELECT id, username FROM users ORDER BY id")) {
+            list = sqliteFetchAll();
+        }
+        sqliteClose();
+        return list;
+    }
+
+    method getUser(id) {
+        let ok = sqliteOpen(app.dbPath);
+        let row = [];
+        if (!ok) return row;
+        let q = "SELECT id, username, password FROM users WHERE id = " + id;
+        if (sqliteQuery(q)) {
+            let rows = sqliteFetchAll();
+            if (arrayLength(rows) > 0) row = arrayGet(rows, 0);
+        }
+        sqliteClose();
+        return row;
+    }
+
+    method createUser(usr, password) {
+        let ok = sqliteOpen(app.dbPath);
+        if (!ok) return false;
+        let nameEsc = replaceString(usr, "'", "''");
+        let passEsc = replaceString(password, "'", "''");
+        sqliteExec("INSERT INTO users(username, password) VALUES ('" + nameEsc + "', '" + passEsc + "')");
+        sqliteClose();
+        return true;
+    }
+
+    method updateUser(id, usr, password) {
+        let ok = sqliteOpen(app.dbPath);
+        if (!ok) return false;
+        let nameEsc = replaceString(usr, "'", "''");
+        let passEsc = replaceString(password, "'", "''");
+        sqliteExec("UPDATE users SET username = '" + nameEsc + "', password = '" + passEsc + "' WHERE id = " + id);
+        sqliteClose();
+        return true;
+    }
+
+    method deleteUser(id) {
+        let ok = sqliteOpen(app.dbPath);
+        if (!ok) return false;
+        sqliteExec("DELETE FROM users WHERE id = " + id);
+        sqliteClose();
+        return true;
+    }
+
+    method getProducts() {
+        let ok = sqliteOpen(app.dbPath);
+        let list = [];
+        if (!ok) return list;
+        if (sqliteQuery("SELECT id, name, price, description, COALESCE(image,''), COALESCE(category_id, 0) FROM products ORDER BY id")) {
+            list = sqliteFetchAll();
+        }
+        sqliteClose();
+        return list;
+    }
+
+    method getProduct(id) {
+        let ok = sqliteOpen(app.dbPath);
+        let row = [];
+        if (!ok) return row;
+        let q = "SELECT id, name, price, description, COALESCE(image,''), COALESCE(category_id, 0) FROM products WHERE id = " + id;
+        if (sqliteQuery(q)) {
+            let rows = sqliteFetchAll();
+            if (arrayLength(rows) > 0) row = arrayGet(rows, 0);
+        }
+        sqliteClose();
+        return row;
+    }
+
+    method createProduct(name, price, description, imagePath, categoryId) {
+        let ok = sqliteOpen(app.dbPath);
+        if (!ok) return 0;
+        let nameEsc = replaceString(name, "'", "''");
+        let descEsc = replaceString(description, "'", "''");
+        let priceEsc = replaceString(price, "'", "''");
+        let imgEsc = replaceString(imagePath, "'", "''");
+        let catId = categoryId;
+        if (catId == "") catId = "0";
+        sqliteExec("INSERT INTO products(name, price, description, image, category_id) VALUES ('" + nameEsc + "', '" + priceEsc + "', '" + descEsc + "', '" + imgEsc + "', " + catId + ")");
+        let newId = 0;
+        if (sqliteQuery("SELECT last_insert_rowid()")) {
+            let rows = sqliteFetchAll();
+            if (arrayLength(rows) > 0) newId = arrayGet(arrayGet(rows, 0), 0);
+        }
+        sqliteClose();
+        return newId;
+    }
+
+    method updateProduct(id, name, price, description, imagePath, categoryId) {
+        let ok = sqliteOpen(app.dbPath);
+        if (!ok) return false;
+        let nameEsc = replaceString(name, "'", "''");
+        let descEsc = replaceString(description, "'", "''");
+        let priceEsc = replaceString(price, "'", "''");
+        let imgEsc = replaceString(imagePath, "'", "''");
+        let catId = categoryId;
+        if (catId == "") catId = "0";
+        sqliteExec("UPDATE products SET name = '" + nameEsc + "', price = '" + priceEsc + "', description = '" + descEsc + "', image = '" + imgEsc + "', category_id = " + catId + " WHERE id = " + id);
+        sqliteClose();
+        return true;
+    }
+
+    method updateProductImage(id, imagePath) {
+        let ok = sqliteOpen(app.dbPath);
+        if (!ok) return false;
+        let imgEsc = replaceString(imagePath, "'", "''");
+        sqliteExec("UPDATE products SET image = '" + imgEsc + "' WHERE id = " + id);
+        sqliteClose();
+        return true;
+    }
+
+    method deleteProduct(id) {
+        let ok = sqliteOpen(app.dbPath);
+        if (!ok) return false;
+        sqliteExec("DELETE FROM products WHERE id = " + id);
+        sqliteClose();
+        return true;
+    }
+
+    method getCategories() {
+        let ok = sqliteOpen(app.dbPath);
+        let list = [];
+        if (!ok) return list;
+        if (sqliteQuery("SELECT id, name, description FROM categories ORDER BY name")) {
+            list = sqliteFetchAll();
+        }
+        sqliteClose();
+        return list;
+    }
+
+    method getCategory(id) {
+        let ok = sqliteOpen(app.dbPath);
+        let row = [];
+        if (!ok) return row;
+        let q = "SELECT id, name, description FROM categories WHERE id = " + id;
+        if (sqliteQuery(q)) {
+            let rows = sqliteFetchAll();
+            if (arrayLength(rows) > 0) row = arrayGet(rows, 0);
+        }
+        sqliteClose();
+        return row;
+    }
+
+    method createCategory(name, description) {
+        let ok = sqliteOpen(app.dbPath);
+        if (!ok) return false;
+        let nameEsc = replaceString(name, "'", "''");
+        let descEsc = replaceString(description, "'", "''");
+        sqliteExec("INSERT INTO categories(name, description) VALUES ('" + nameEsc + "', '" + descEsc + "')");
+        sqliteClose();
+        return true;
+    }
+
+    method updateCategory(id, name, description) {
+        let ok = sqliteOpen(app.dbPath);
+        if (!ok) return false;
+        let nameEsc = replaceString(name, "'", "''");
+        let descEsc = replaceString(description, "'", "''");
+        sqliteExec("UPDATE categories SET name = '" + nameEsc + "', description = '" + descEsc + "' WHERE id = " + id);
+        sqliteClose();
+        return true;
+    }
+
+    method deleteCategory(id) {
+        let ok = sqliteOpen(app.dbPath);
+        if (!ok) return false;
+        sqliteExec("DELETE FROM categories WHERE id = " + id);
+        sqliteClose();
+        return true;
+    }
+
+    method getPosts() {
+        let ok = sqliteOpen(app.dbPath);
+        let list = [];
+        if (!ok) return list;
+        if (sqliteQuery("SELECT id, title, COALESCE(author,''), COALESCE(status,'draft'), COALESCE(created_at,'') FROM posts ORDER BY id DESC")) {
+            list = sqliteFetchAll();
+        }
+        sqliteClose();
+        return list;
+    }
+
+    method getPost(id) {
+        let ok = sqliteOpen(app.dbPath);
+        let row = [];
+        if (!ok) return row;
+        let q = "SELECT id, title, content, COALESCE(author,''), COALESCE(status,'draft'), COALESCE(created_at,'') FROM posts WHERE id = " + id;
+        if (sqliteQuery(q)) {
+            let rows = sqliteFetchAll();
+            if (arrayLength(rows) > 0) row = arrayGet(rows, 0);
+        }
+        sqliteClose();
+        return row;
+    }
+
+    method createPost(title, content, author, status) {
+        let ok = sqliteOpen(app.dbPath);
+        if (!ok) return false;
+        let titleEsc = replaceString(title, "'", "''");
+        let contentEsc = replaceString(content, "'", "''");
+        let authorEsc = replaceString(author, "'", "''");
+        let statusEsc = replaceString(status, "'", "''");
+        if (statusEsc == "") statusEsc = "draft";
+        sqliteExec("INSERT INTO posts(title, content, author, status) VALUES ('" + titleEsc + "', '" + contentEsc + "', '" + authorEsc + "', '" + statusEsc + "')");
+        sqliteClose();
+        return true;
+    }
+
+    method updatePost(id, title, content, author, status) {
+        let ok = sqliteOpen(app.dbPath);
+        if (!ok) return false;
+        let titleEsc = replaceString(title, "'", "''");
+        let contentEsc = replaceString(content, "'", "''");
+        let authorEsc = replaceString(author, "'", "''");
+        let statusEsc = replaceString(status, "'", "''");
+        if (statusEsc == "") statusEsc = "draft";
+        sqliteExec("UPDATE posts SET title = '" + titleEsc + "', content = '" + contentEsc + "', author = '" + authorEsc + "', status = '" + statusEsc + "' WHERE id = " + id);
+        sqliteClose();
+        return true;
+    }
+
+    method deletePost(id) {
+        let ok = sqliteOpen(app.dbPath);
+        if (!ok) return false;
+        sqliteExec("DELETE FROM posts WHERE id = " + id);
+        sqliteClose();
+        return true;
+    }
+}

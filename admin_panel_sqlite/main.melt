@@ -1,0 +1,44 @@
+// Bootstrap admin panel with SQLite. Build: make with-sqlite
+// Run: ./bin/melt examples/admin_panel_sqlite/main.melt
+// Open http://localhost:8080 — login: admin / admin
+
+import "config.melt";
+import "routes.melt";
+
+class App {
+    method handle() {
+        let pathFull = getRequestPath();
+        let pathParts = splitString(pathFull, "?");
+        let path = arrayGet(pathParts, 0);
+        let served = false;
+        let pathSegs = splitString(path, "/uploads/");
+        if (arrayLength(pathSegs) >= 2 && arrayGet(pathSegs, 0) == "") {
+            let subpath = arrayGet(pathSegs, 1);
+            if (replaceString(subpath, "..", "x") == subpath) {
+                try {
+                    let data = readFile("uploads/" + subpath);
+                    let extParts = splitString(subpath, ".");
+                    let ext = "";
+                    if (arrayLength(extParts) >= 2) ext = arrayGet(extParts, arrayLength(extParts) - 1);
+                    let ct = "application/octet-stream";
+                    if (ext == "jpg" || ext == "jpeg") ct = "image/jpeg";
+                    else if (ext == "png") ct = "image/png";
+                    else if (ext == "gif") ct = "image/gif";
+                    else if (ext == "webp") ct = "image/webp";
+                    setResponseContentType(ct);
+                    setResponseBody(data);
+                    setResponseStatus(200);
+                    served = true;
+                } catch (e) {}
+            }
+        }
+        if (!served) {
+            Router().dispatch(path, pathFull);
+        }
+    }
+}
+
+setHandler("App");
+print "Admin panel: http://localhost:" + app.port;
+print "  Login: admin / admin";
+listen(app.port);
