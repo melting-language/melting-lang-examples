@@ -11,6 +11,7 @@ class Db {
         sqliteExec("CREATE TABLE IF NOT EXISTS products (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, price TEXT, description TEXT, image TEXT, category_id INTEGER)");
         sqliteExec("CREATE TABLE IF NOT EXISTS categories (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, description TEXT)");
         sqliteExec("CREATE TABLE IF NOT EXISTS posts (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, content TEXT, author TEXT, status TEXT, created_at TEXT DEFAULT (datetime('now')))");
+        sqliteExec("CREATE TABLE IF NOT EXISTS chat_messages (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT, body TEXT, created_at TEXT DEFAULT (datetime('now')))");
         try {
             sqliteExec("ALTER TABLE products ADD COLUMN image TEXT");
         } catch (e) {}
@@ -273,5 +274,44 @@ class Db {
         sqliteExec("DELETE FROM posts WHERE id = " + id);
         sqliteClose();
         return true;
+    }
+
+    method getRecentChatMessages(limit) {
+        let ok = sqliteOpen(app.dbPath);
+        let list = [];
+        if (!ok) return list;
+        let q = "SELECT id, username, body FROM chat_messages ORDER BY id DESC LIMIT " + limit;
+        if (sqliteQuery(q)) {
+            list = sqliteFetchAll();
+        }
+        sqliteClose();
+        return list;
+    }
+
+    method getNewChatMessages(sinceId) {
+        let ok = sqliteOpen(app.dbPath);
+        let list = [];
+        if (!ok) return list;
+        let q = "SELECT id, username, body FROM chat_messages WHERE id > " + sinceId + " ORDER BY id";
+        if (sqliteQuery(q)) {
+            list = sqliteFetchAll();
+        }
+        sqliteClose();
+        return list;
+    }
+
+    method addChatMessage(username, body) {
+        let ok = sqliteOpen(app.dbPath);
+        if (!ok) return 0;
+        let userEsc = replaceString(username, "'", "''");
+        let bodyEsc = replaceString(body, "'", "''");
+        sqliteExec("INSERT INTO chat_messages(username, body) VALUES ('" + userEsc + "', '" + bodyEsc + "')");
+        let newId = 0;
+        if (sqliteQuery("SELECT last_insert_rowid()")) {
+            let rows = sqliteFetchAll();
+            if (arrayLength(rows) > 0) newId = arrayGet(arrayGet(rows, 0), 0);
+        }
+        sqliteClose();
+        return newId;
     }
 }

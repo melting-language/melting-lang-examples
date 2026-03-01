@@ -64,6 +64,10 @@ class Router {
             ChatController().index();
         } else if (path == "/dashboard/chat/events" && getRequestMethod() == "GET") {
             ChatController().events();
+        } else if (path == "/dashboard/chat/send" && getRequestMethod() == "POST") {
+            ChatController().send();
+        } else if (path == "/dashboard/chat/poll" && getRequestMethod() == "GET") {
+            ChatController().poll();
         } else {
             let pathAndQuery = pathFull;
             let pathParts = splitString(pathAndQuery, "?");

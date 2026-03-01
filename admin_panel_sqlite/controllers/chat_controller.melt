@@ -10,15 +10,21 @@ class ChatController {
             return;
         }
         Db().ensureDb();
+        let rows = Db().getRecentChatMessages(100);
+        let list = [];
+        let i = arrayLength(rows);
+        while (i > 0) {
+            i = i - 1;
+            arrayPush(list, arrayGet(rows, i));
+        }
         let view = View();
-        view.renderChat();
+        view.renderChat(list);
         setResponseBody(view.output);
         setResponseContentType("text/html; charset=utf-8");
         setResponseStatus(200);
     }
 
-    // SSE endpoint: stream events using streamChunk (Transfer-Encoding: chunked).
-    // If not logged in, send one error event then close (so client gets a message instead of a redirect).
+    // SSE endpoint: streams words with 0.5s delay between each (Melt sleep builtin).
     method events() {
         setResponseContentType("text/event-stream");
         setResponseStatus(200);
@@ -28,10 +34,120 @@ class ChatController {
             streamChunk("event: error\ndata: " + jsonEncode("Please log in to use chat.") + "\n\n");
             return;
         }
-        streamChunk("data: " + jsonEncode("connected") + "\n\n");
-        streamChunk("data: " + jsonEncode("Welcome to the admin chat. Messages stream in real time.") + "\n\n");
-        streamChunk("event: join\ndata: " + jsonEncode("You joined the chat.") + "\n\n");
-        streamChunk("data: " + jsonEncode("Server: Use the input below to send a message (demo).") + "\n\n");
-        streamChunk("data: " + jsonEncode("Server: Chat is powered by Melt streamChunk (SSE).") + "\n\n");
+        streamChunk("data: " + jsonEncode("The") + "\n\n");
+        sleep(0.5);
+        streamChunk("data: " + jsonEncode("Melt") + "\n\n");
+        sleep(0.5);
+        streamChunk("data: " + jsonEncode("language") + "\n\n");
+        sleep(0.5);
+        streamChunk("data: " + jsonEncode("streams") + "\n\n");
+        sleep(0.5);
+        streamChunk("data: " + jsonEncode("text") + "\n\n");
+        sleep(0.5);
+        streamChunk("data: " + jsonEncode("word") + "\n\n");
+        sleep(0.5);
+        streamChunk("data: " + jsonEncode("by") + "\n\n");
+        sleep(0.5);
+        streamChunk("data: " + jsonEncode("word.") + "\n\n");
+        sleep(0.5);
+        streamChunk("data: " + jsonEncode("This") + "\n\n");
+        sleep(0.5);
+        streamChunk("data: " + jsonEncode("demo") + "\n\n");
+        sleep(0.5);
+        streamChunk("data: " + jsonEncode("uses") + "\n\n");
+        sleep(0.5);
+        streamChunk("data: " + jsonEncode("Server-Sent") + "\n\n");
+        sleep(0.5);
+        streamChunk("data: " + jsonEncode("Events") + "\n\n");
+        sleep(0.5);
+        streamChunk("data: " + jsonEncode("so") + "\n\n");
+        sleep(0.5);
+        streamChunk("data: " + jsonEncode("you") + "\n\n");
+        sleep(0.5);
+        streamChunk("data: " + jsonEncode("see") + "\n\n");
+        sleep(0.5);
+        streamChunk("data: " + jsonEncode("each") + "\n\n");
+        sleep(0.5);
+        streamChunk("data: " + jsonEncode("token") + "\n\n");
+        sleep(0.5);
+        streamChunk("data: " + jsonEncode("as") + "\n\n");
+        sleep(0.5);
+        streamChunk("data: " + jsonEncode("it") + "\n\n");
+        sleep(0.5);
+        streamChunk("data: " + jsonEncode("arrives.") + "\n\n");
+        sleep(0.5);
+        streamChunk("data: " + jsonEncode("[done]") + "\n\n");
+    }
+
+    // POST /dashboard/chat/send — body: msg=...
+    method send() {
+        if (getCookie("admin_session") != "1") {
+            setResponseStatus(403);
+            setResponseBody("");
+            return;
+        }
+        let bodyStr = getRequestBody();
+        let msg = "";
+        let parts = splitString(bodyStr, "&");
+        let idx = 0;
+        while (idx < arrayLength(parts)) {
+            let part = arrayGet(parts, idx);
+            let pair = splitString(part, "=");
+            if (arrayLength(pair) >= 2 && arrayGet(pair, 0) == "msg") {
+                msg = urlDecode(arrayGet(pair, 1));
+                idx = arrayLength(parts);
+            }
+            idx = idx + 1;
+        }
+        let usr = getCookie("admin_username");
+        if (usr == "") usr = "Admin";
+        Db().ensureDb();
+        let newId = Db().addChatMessage(usr, msg);
+        let obj = objectCreate();
+        obj.id = newId;
+        let unKey = "username";
+        obj[unKey] = usr;
+        obj.body = msg;
+        setResponseContentType("application/json; charset=utf-8");
+        setResponseBody(jsonEncode(obj));
+        setResponseStatus(200);
+    }
+
+    // GET /dashboard/chat/poll?since=ID — JSON array of { id, username, body }
+    method poll() {
+        if (getCookie("admin_session") != "1") {
+            setResponseStatus(403);
+            setResponseBody("[]");
+            return;
+        }
+        let pathFull = getRequestPath();
+        let sinceId = "0";
+        let pathParts = splitString(pathFull, "?");
+        if (arrayLength(pathParts) >= 2) {
+            let params = splitString(arrayGet(pathParts, 1), "&");
+            let j = 0;
+            while (j < arrayLength(params)) {
+                let kv = splitString(arrayGet(params, j), "=");
+                if (arrayLength(kv) >= 2 && arrayGet(kv, 0) == "since") sinceId = arrayGet(kv, 1);
+                j = j + 1;
+            }
+        }
+        Db().ensureDb();
+        let rows = Db().getNewChatMessages(sinceId);
+        let list = arrayCreate();
+        let i = 0;
+        let unKey = "username";
+        while (i < arrayLength(rows)) {
+            let row = arrayGet(rows, i);
+            let o = objectCreate();
+            o.id = arrayGet(row, 0);
+            o[unKey] = arrayGet(row, 1);
+            o.body = arrayGet(row, 2);
+            arrayPush(list, o);
+            i = i + 1;
+        }
+        setResponseContentType("application/json; charset=utf-8");
+        setResponseBody(jsonEncode(list));
+        setResponseStatus(200);
     }
 }

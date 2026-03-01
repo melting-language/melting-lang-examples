@@ -53,8 +53,27 @@ class View {
         this.output = renderView("views/layout_dashboard.html", layoutData);
     }
 
-    method renderChat() {
+    method renderChat(messagesList) {
+        let list = arrayCreate();
+        let lastId = 0;
+        let unKey = "username";
+        let i = 0;
+        while (i < arrayLength(messagesList)) {
+            let row = arrayGet(messagesList, i);
+            let o = objectCreate();
+            o.id = arrayGet(row, 0);
+            o[unKey] = arrayGet(row, 1);
+            o.body = arrayGet(row, 2);
+            arrayPush(list, o);
+            if (arrayGet(row, 0) > lastId) lastId = arrayGet(row, 0);
+            i = i + 1;
+        }
         let data = ViewData();
+        data.initialMessagesJson = jsonEncode(list);
+        data.lastChatId = lastId;
+        let u = getCookie("admin_username");
+        if (u == "") u = "Admin";
+        data.myUsernameJson = jsonEncode(u);
         let body = renderView("views/chat.html", data);
         let sidebarHtml = renderView("views/sidebar.html", ViewData());
         let layoutData = ViewData();

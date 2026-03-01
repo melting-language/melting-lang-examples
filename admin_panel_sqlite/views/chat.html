@@ -1,81 +1,156 @@
-<div class="card card-admin">
+<div class="card card-admin mb-4">
   <div class="card-header d-flex align-items-center">
     <i class="fa fa-comments me-2"></i> Chat <span class="badge bg-success ms-2">Live</span>
   </div>
   <div class="card-body">
-    <p class="text-muted small mb-3">Messages stream from the server via Server-Sent Events (Melt <code>streamChunk</code>). The stream sends a few events and then closes—reload to see it again.</p>
+    <p class="text-muted small mb-3">Messages are stored in SQLite and shared with all users. New messages from others appear automatically (polling every 2s).</p>
     <div id="chat-messages" class="border rounded p-3 bg-light" style="min-height: 220px; max-height: 320px; overflow-y: auto; font-family: monospace; font-size: 0.875rem;"></div>
     <div class="mt-3 d-flex gap-2">
-      <input type="text" id="chat-input" class="form-control" placeholder="Type a message (local demo)..." autocomplete="off">
+      <input type="text" id="chat-input" class="form-control" placeholder="Type a message..." autocomplete="off">
       <button type="button" id="chat-send" class="btn btn-admin-primary">Send</button>
     </div>
-    <p class="text-muted small mt-2 mb-0"><strong>Reload</strong> the page to see the stream again.</p>
   </div>
 </div>
+<div class="card card-admin">
+  <div class="card-header d-flex align-items-center">
+    <i class="fa fa-stream me-2"></i> Realtime stream <span class="badge bg-info ms-2">ChatGPT-style</span>
+  </div>
+  <div class="card-body">
+    <p class="text-muted small mb-3">Stream from <code>/dashboard/chat/events</code> — text appears word by word like ChatGPT.</p>
+    <div id="stream-wrap" class="stream-chat-wrap rounded p-3" style="min-height: 180px; max-height: 320px; overflow-y: auto;">
+      <div id="stream-body" class="stream-chat-body"></div>
+      <span id="stream-cursor" class="stream-cursor" aria-hidden="true"></span>
+    </div>
+    <div class="mt-3">
+      <button type="button" id="stream-start" class="btn btn-admin-primary">Start stream</button>
+    </div>
+  </div>
+</div>
+<style>
+.stream-chat-wrap { background: #f8fafc; border: 1px solid #e2e8f0; }
+.stream-chat-body { font-size: 0.9375rem; line-height: 1.6; color: #334155; white-space: pre-wrap; word-wrap: break-word; display: inline; }
+.stream-cursor { display: inline-block; width: 2px; height: 1em; background: #0ea5e9; margin-left: 1px; vertical-align: text-bottom; animation: stream-blink 0.8s step-end infinite; }
+.stream-cursor.hidden { display: none; }
+@keyframes stream-blink { 50% { opacity: 0; } }
+</style>
 <script>
+var initialChatMessages = {!! initialMessagesJson !!};
+var initialLastChatId = {{ lastChatId }};
+var initialMyUsername = {!! myUsernameJson !!};
 (function() {
   var el = document.getElementById('chat-messages');
   var input = document.getElementById('chat-input');
   var sendBtn = document.getElementById('chat-send');
-  function addLine(text, isEvent) {
+  var lastChatId = typeof initialLastChatId !== 'undefined' ? initialLastChatId : 0;
+  var myUsername = typeof initialMyUsername !== 'undefined' ? initialMyUsername : 'You';
+
+  function addMessage(id, username, body, isOwn) {
     var p = document.createElement('p');
-    p.className = 'mb-1' + (isEvent ? ' text-primary' : '');
-    p.innerHTML = text;
+    p.className = 'mb-1' + (isOwn ? ' text-primary' : '');
+    p.innerHTML = username + ': ' + escapeHtml(body);
+    p.dataset.id = id;
     el.appendChild(p);
     el.scrollTop = el.scrollHeight;
   }
-  function parseSSE(text) {
-    var lines = text.split('\n');
-    var i = 0;
-    while (i < lines.length) {
-      var eventType = '';
-      var data = '';
-      while (i < lines.length) {
-        var line = lines[i];
-        i++;
-        if (line.indexOf('event: ') === 0) eventType = line.slice(7).trim();
-        else if (line.indexOf('data: ') === 0) data = line.slice(6);
-        else if (line === '') break;
-      }
-      if (data !== '') {
-        try {
-          var parsed = JSON.parse(data);
-          var msg = typeof parsed === 'string' ? parsed : JSON.stringify(parsed);
-          addLine(msg + (eventType === 'error' ? ' <a href="/login">Log in</a>' : ''), eventType === 'error' || eventType === 'join');
-        } catch (err) {
-          addLine(data + (eventType === 'error' ? ' <a href="/login">Log in</a>' : ''), eventType === 'error');
-        }
-      }
-    }
+  function escapeHtml(s) {
+    var div = document.createElement('div');
+    div.textContent = s;
+    return div.innerHTML;
   }
-  fetch('/dashboard/chat/events', { credentials: 'include' })
-    .then(function(r) {
-      if (!r.ok) {
-        addLine('Connection failed (' + r.status + '). <a href="/login">Log in</a> and reload.', true);
-        return null;
-      }
-      return r.text();
-    })
-    .then(function(text) {
-      if (text) {
-        parseSSE(text);
-        addLine('Stream ended. Reload page to see again.', true);
-      }
-    })
-    .catch(function() {
-      addLine('Connection failed. <a href="/login">Log in</a> and reload the chat page.', true);
-    });
+
+  var initialMessages = typeof initialChatMessages !== 'undefined' ? initialChatMessages : [];
+  for (var i = 0; i < initialMessages.length; i++) {
+    var m = initialMessages[i];
+    addMessage(m.id, m.username, m.body, m.username === myUsername);
+    if (m.id > lastChatId) lastChatId = m.id;
+  }
+
+  function poll() {
+    fetch('/dashboard/chat/poll?since=' + lastChatId, { credentials: 'include' })
+      .then(function(r) { return r.ok ? r.json() : []; })
+      .then(function(arr) {
+        for (var j = 0; j < arr.length; j++) {
+          var msg = arr[j];
+          addMessage(msg.id, msg.username, msg.body, msg.username === myUsername);
+          if (msg.id > lastChatId) lastChatId = msg.id;
+        }
+      })
+      .catch(function() {});
+  }
+  setInterval(poll, 2000);
+
   sendBtn.addEventListener('click', function() {
     var msg = input.value.trim();
-    if (msg) {
-      addLine('You: ' + msg, false);
-      input.value = '';
-    }
+    if (!msg) return;
+    input.value = '';
+    fetch('/dashboard/chat/send', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'msg=' + encodeURIComponent(msg)
+    })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        addMessage(data.id, data.username, data.body, true);
+        if (data.id > lastChatId) lastChatId = data.id;
+      })
+      .catch(function() {
+        addMessage(0, myUsername, msg, true);
+      });
   });
   input.addEventListener('keydown', function(ev) {
-    if (ev.key === 'Enter') {
-      sendBtn.click();
-    }
+    if (ev.key === 'Enter') sendBtn.click();
   });
+
+  var streamBody = document.getElementById('stream-body');
+  var streamCursor = document.getElementById('stream-cursor');
+  var streamWrap = document.getElementById('stream-wrap');
+  var streamStart = document.getElementById('stream-start');
+  if (streamBody && streamStart) {
+    streamStart.addEventListener('click', function() {
+      streamBody.textContent = '';
+      if (streamCursor) streamCursor.classList.remove('hidden');
+      streamStart.disabled = true;
+      streamBody.appendChild(document.createTextNode('Connecting…'));
+      var url = '/dashboard/chat/events?t=' + Date.now();
+      var es = new EventSource(url);
+      es.onopen = function() {
+        streamBody.textContent = '';
+        if (streamWrap) streamWrap.scrollTop = 0;
+      };
+      es.onmessage = function(ev) {
+        try {
+          var parsed = JSON.parse(ev.data);
+          var word = typeof parsed === 'string' ? parsed : JSON.stringify(parsed);
+          if (word === '[done]') {
+            es.close();
+            if (streamCursor) streamCursor.classList.add('hidden');
+            streamStart.disabled = false;
+          } else {
+            streamBody.appendChild(document.createTextNode(word + ' '));
+            if (streamWrap) streamWrap.scrollTop = streamWrap.scrollHeight;
+          }
+        } catch (e) {
+          streamBody.appendChild(document.createTextNode(ev.data + ' '));
+          if (streamWrap) streamWrap.scrollTop = streamWrap.scrollHeight;
+        }
+      };
+      es.addEventListener('error', function(ev) {
+        if (ev.data !== undefined && ev.data !== null) {
+          try {
+            var msg = typeof ev.data === 'string' ? JSON.parse(ev.data) : ev.data;
+            streamBody.textContent = typeof msg === 'string' ? msg : JSON.stringify(msg);
+          } catch (err) {
+            streamBody.textContent = ev.data;
+          }
+        } else if (streamBody.textContent === '' || streamBody.textContent === 'Connecting…') {
+          streamBody.textContent = 'Connection failed or stream closed. Log in and try again.';
+        }
+        es.close();
+        if (streamCursor) streamCursor.classList.add('hidden');
+        streamStart.disabled = false;
+      });
+    });
+  }
 })();
 </script>
