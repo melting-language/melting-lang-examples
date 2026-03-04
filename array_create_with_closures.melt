@@ -1,0 +1,10 @@
+// Example: arrayCreate() with anonymous functions (closures) inside
+
+// Build an array of operations using arrayCreate
+let ops = arrayCreate(
+    fn(n) { return n + 1; },
+    fn(n) { return n * 2; },
+    fn(n) { return n - 5; }
+);
+
+print ops;

@@ -1,0 +1,25 @@
+// PHP associative array equivalent in Melt
+// PHP:  $result = [ 'status' => true, 'data' => [ 'sql_data' => 'engine', ... ] ]
+// Melt has no associative array literal; use objectCreate() and properties (same shape as JSON).
+
+let result = objectCreate();
+result.status = true;
+
+let data = objectCreate();
+data.sql_data = "engine";
+data.interval = 1992;
+
+let sps = objectCreate();
+sps.time = "rate";
+data.sps = sps;
+
+result.data = data;
+
+// Use it
+print result.status;
+print result.data.sql_data;
+print result.data.interval;
+print result.data.sps.time;
+
+// As JSON (like PHP json_encode($result))
+print jsonEncode(result);

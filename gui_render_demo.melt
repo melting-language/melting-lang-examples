@@ -1,0 +1,9 @@
+// GUI render demo. Run: make with-gui && ./bin/melt examples/gui_render_demo.melt
+// Requires SDL2. Opens a window; close with window button or Escape/Q.
+
+imageCreate(320, 240);
+imageFill(30, 60, 120);                    // dark blue background
+imageDrawLine(0, 0, 319, 239);              // white diagonal line
+imageDrawLine(319, 0, 0, 239);              // cross
+imageSetPixel(160, 120, 255, 255, 0);      // yellow center pixel
+imagePreview();                             // show window (blocks until closed)

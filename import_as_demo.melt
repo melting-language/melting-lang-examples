@@ -1,0 +1,9 @@
+// Import a module and bind it to a variable in one line (import "path.melt" as M;)
+// Then use the class via that variable: M.ClassName(...)
+
+import "import_as_demo_lib.melt" as Lib;
+
+let obj = Lib.MyClass(10, 20);
+print obj.x;
+print obj.y;
+obj.sayHello();

@@ -1,0 +1,9 @@
+class MyClass {
+    method init(a, b) {
+        this.x = a;
+        this.y = b;
+    }
+    method sayHello() {
+        print "Hello from MyClass: " + this.x + ", " + this.y;
+    }
+}

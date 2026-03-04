@@ -1,0 +1,29 @@
+// Arrays with anonymous functions (closures)
+// 1) Array literal containing lambdas
+let handlers = [
+    fn() { return "first"; },
+    fn() { return "second"; },
+    fn(x) { return x + 10; }
+];
+print handlers[0]();   // "first"
+print handlers[1]();   // "second"
+print handlers[2](5);  // 15
+
+// 2) arrayCreate() with initial elements (including closures)
+let fns = arrayCreate(
+    fn(a, b) { return a + b; },
+    fn(a, b) { return a * b; }
+);
+print arrayGet(fns, 0)(3, 4);   // 7
+print arrayGet(fns, 1)(3, 4);   // 12
+
+// 3) Closures in array capture variables
+let base = 100;
+let withCapture = [
+    fn() { return base + 1; },
+    fn() { return base + 2; }
+];
+print withCapture[0]();  // 101
+print withCapture[1]();  // 102
+
+print "array_closures_demo done";
