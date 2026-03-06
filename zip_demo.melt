@@ -1,0 +1,28 @@
+// Zip extension demo. Enable: extension = zip (and install libzip).
+// Run: ./build/melt examples/zip_demo.melt
+
+print "Zip extension: " + zipVersion();
+
+// Create two temp files to zip
+writeFile("examples/zip_demo_a.txt", "Hello from a");
+writeFile("examples/zip_demo_b.txt", "Hello from b");
+
+let paths = [ "examples/zip_demo_a.txt", "examples/zip_demo_b.txt" ];
+let ok = zipCreate("examples/zip_demo_out.zip", paths);
+print "zipCreate: " + ok;
+
+let names = zipList("examples/zip_demo_out.zip");
+print "zipList length: " + arrayLength(names);
+let i = 0;
+while (i < arrayLength(names)) {
+    print "  " + arrayGet(names, i);
+    i = i + 1;
+}
+
+let content = zipReadEntry("examples/zip_demo_out.zip", "zip_demo_a.txt");
+print "zipReadEntry: " + content;
+
+ok = zipExtract("examples/zip_demo_out.zip", "examples/zip_extracted");
+print "zipExtract: " + ok;
+
+print "done.";
