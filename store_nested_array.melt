@@ -1,0 +1,78 @@
+// PHP-style nested structure in Melt: use [ "key" :=> value, ... ] for maps (objects)
+// and [ a, b, c ] for arrays. Same shape as PHP $store.
+
+let store = [
+    "users" :=> [
+        [
+            "id" :=> 1,
+            "name" :=> "Sanjaya",
+            "email" :=> "sanjaya@example.com",
+            "orders" :=> [
+                [
+                    "order_id" :=> 1001,
+                    "date" :=> "2026-03-05",
+                    "products" :=> [
+                        [
+                            "product_id" :=> 10,
+                            "name" :=> "Laptop",
+                            "price" :=> 1200,
+                            "quantity" :=> 1
+                        ],
+                        [
+                            "product_id" :=> 11,
+                            "name" :=> "Mouse",
+                            "price" :=> 25,
+                            "quantity" :=> 2
+                        ]
+                    ],
+                    "shipping" :=> [
+                        "method" :=> "DHL",
+                        "address" :=> [
+                            "city" :=> "Colombo",
+                            "country" :=> "Sri Lanka"
+                        ]
+                    ]
+                ]
+            ]
+        ],
+        [
+            "id" :=> 2,
+            "name" :=> "Kamal",
+            "email" :=> "kamal@example.com",
+            "orders" :=> [
+                [
+                    "order_id" :=> 1002,
+                    "date" :=> "2026-03-06",
+                    "products" :=> [
+                        [
+                            "product_id" :=> 15,
+                            "name" :=> "Keyboard",
+                            "price" :=> 80,
+                            "quantity" :=> 1
+                        ]
+                    ],
+                    "shipping" :=> [
+                        "method" :=> "FedEx",
+                        "address" :=> [
+                            "city" :=> "Kandy",
+                            "country" :=> "Sri Lanka"
+                        ]
+                    ]
+                ]
+            ]
+        ]
+    ]
+];
+
+// Use it (same as PHP)
+print store.users[0].name;
+print store.users[0].orders[0].order_id;
+print store.users[0].orders[0].products[0].name;
+print store.users[0].orders[0].shipping.address.city;
+
+print store.users[1].name;
+print store.users[1].orders[0].products[0].name;
+print store.users[1].orders[0].shipping.address.country;
+
+// As JSON (like PHP json_encode($store))
+print jsonEncode(store);
