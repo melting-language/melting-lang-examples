@@ -31,7 +31,9 @@ class Db {
         let ok = sqliteOpen(app.dbPath);
         if (!ok) return false;
         let found = false;
-        let q = "SELECT id FROM users WHERE username = '" + usr + "' AND password = '" + password + "'";
+        let usrEsc = replaceString(usr, "'", "''");
+        let passEsc = replaceString(password, "'", "''");
+        let q = "SELECT id FROM users WHERE username = '" + usrEsc + "' AND password = '" + passEsc + "'";
         if (sqliteQuery(q)) {
             let rows = sqliteFetchAll();
             if (arrayLength(rows) > 0) found = true;

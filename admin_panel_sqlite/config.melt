@@ -1,5 +1,6 @@
 // Admin panel config: app name, port, SQLite DB path.
 // Build Melt with SQLite: make with-sqlite
+// Run from project root so dbPath resolves: ./build/melt examples/admin_panel_sqlite/main.melt
 
 class AppConfig {
     method init() {

@@ -17,6 +17,7 @@ class LoginController {
     }
 
     method loginPost() {
+        Db().ensureDb();
         let bodyStr = getRequestBody();
         let loginName = "";
         let password = "";
@@ -26,7 +27,7 @@ class LoginController {
             let part = arrayGet(parts, i);
             let pair = splitString(part, "=");
             if (arrayLength(pair) >= 2) {
-                let key = arrayGet(pair, 0);
+                let key = urlDecode(arrayGet(pair, 0));
                 let val = arrayGet(pair, 1);
                 let j = 2;
                 while (j < arrayLength(pair)) {
@@ -39,7 +40,6 @@ class LoginController {
             }
             i = i + 1;
         }
-        Db().ensureDb();
         if (Db().checkUser(loginName, password)) {
             setCookie("admin_session", "1", "/", 86400, 0);
             setCookie("admin_username", loginName, "/", 86400, 0);
