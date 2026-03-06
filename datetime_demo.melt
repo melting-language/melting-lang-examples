@@ -1,0 +1,32 @@
+// DateTime extension demo. Enable: extension = datetime in melt.config or melt.ini
+// Run: ./build/melt examples/datetime_demo.melt
+
+print "=== DateTime extension ===";
+print "Version: " + dateVersion();
+print "--- Current ---";
+print "Timestamp (sec): " + dateTimestamp();
+print "Timestamp (ms): " + dateTimestampMs();
+print "dateNow(): " + dateNow();
+print "dateCurrentDate(): " + dateCurrentDate();
+print "dateCurrentTime(): " + dateCurrentTime();
+print "--- Format ---";
+let ts = dateTimestamp();
+print "dateFormat(ts): " + dateFormat(ts);
+let fmt = "%d/%m/%Y";
+print "dateFormat(ts, fmt): " + dateFormat(ts, fmt);
+print "dateStyle short: " + dateStyle(ts, "short");
+print "dateStyle long: " + dateStyle(ts, "long");
+print "--- Parse & add ---";
+let parsed = dateParse("2026-03-15T10:30:00");
+print "parsed: " + dateFormat(parsed);
+let base = dateParse("2026-03-01T12:00:00");
+print "dateAdd(base, 5, day): " + dateFormat(dateAdd(base, 5, "day"));
+print "dateDiff: " + dateDiff(base, dateAdd(base, 10, "day"), "day");
+print "--- Components ---";
+print "Y M D: " + dateYear(ts) + " " + dateMonth(ts) + " " + dateDay(ts);
+print "H M S: " + dateHour(ts) + " " + dateMinute(ts) + " " + dateSecond(ts);
+print "Weekday: " + dateWeekday(ts);
+print "--- Zone ---";
+print "dateZoneOffset: " + dateZoneOffset();
+print "dateUtcOffsetString: " + dateUtcOffsetString();
+print "done.";
