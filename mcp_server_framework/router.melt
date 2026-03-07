@@ -45,6 +45,7 @@ class McpRouter {
     }
 
     // Route by method name. Return success(id, result) or error(id, code, message).
+    // Full MCP: initialize, tools/list, tools/call, resources/list, resources/read, prompts/list, prompts/get.
     method dispatch(mname, params, id) {
         if (mname == "ping") {
             return this.ping(id);
@@ -55,11 +56,26 @@ class McpRouter {
         if (mname == "add") {
             return this.add(params, id);
         }
+        if (mname == "initialize" || mname == "Initialize") {
+            return this.initialize(id);
+        }
         if (mname == "tools/list") {
             return this.toolsList(id);
         }
-        if (mname == "initialize") {
-            return this.initialize(id);
+        if (mname == "tools/call") {
+            return this.toolsCall(params, id);
+        }
+        if (mname == "resources/list") {
+            return this.resourcesList(id);
+        }
+        if (mname == "resources/read") {
+            return this.resourcesRead(params, id);
+        }
+        if (mname == "prompts/list") {
+            return this.promptsList(id);
+        }
+        if (mname == "prompts/get") {
+            return this.promptsGet(params, id);
         }
         return error(id, METHOD_NOT_FOUND, "Method not found: " + mname);
     }
@@ -86,47 +102,119 @@ class McpRouter {
 
     method toolsList(id) {
         let tools = arrayCreate();
-        arrayPush(tools, this.makeTool("ping", "Respond with pong"));
-        arrayPush(tools, this.makeTool("echo", "Echo a message"));
-        arrayPush(tools, this.makeTool("add", "Add two numbers (params: a, b)"));
-        return success(id, tools);
+        arrayPush(tools, this.makeTool("ping", "Respond with pong", objectCreate()));
+        arrayPush(tools, this.makeTool("echo", "Echo a message", this.schemaEcho()));
+        arrayPush(tools, this.makeTool("add", "Add two numbers", this.schemaAdd()));
+        let result = objectCreate();
+        result.tools = tools;
+        return success(id, result);
     }
 
-    method makeTool(name, desc) {
-        return ToolDesc(name, desc);
+    method makeTool(name, desc, inputSchema) {
+        let t = objectCreate();
+        t.name = name;
+        t.description = desc;
+        t.inputSchema = inputSchema;
+        return t;
+    }
+
+    method schemaEcho() {
+        let s = objectCreate();
+        s.type = "object";
+        let props = objectCreate();
+        props.message = objectCreate();
+        props.message.type = "string";
+        props.message.description = "Message to echo";
+        s.properties = props;
+        return s;
+    }
+
+    method schemaAdd() {
+        let s = objectCreate();
+        s.type = "object";
+        let props = objectCreate();
+        props.a = objectCreate();
+        props.a.type = "number";
+        props.b = objectCreate();
+        props.b.type = "number";
+        s.properties = props;
+        return s;
+    }
+
+    method toolsCall(params, id) {
+        let name = "";
+        if (params.name != false) { name = params.name; }
+        let args = objectCreate();
+        if (params.arguments != false) { args = params.arguments; }
+        let text = "";
+        let err = false;
+        if (name == "ping") {
+            text = "pong";
+        } else if (name == "echo") {
+            text = "hello";
+            if (args.message != false) { text = args.message; }
+        } else if (name == "add") {
+            let a = 0;
+            let b = 0;
+            if (args.a != false) { a = args.a; }
+            if (args.b != false) { b = args.b; }
+            text = "" + (a + b);
+        } else {
+            return error(id, METHOD_NOT_FOUND, "Unknown tool: " + name);
+        }
+        let contentItem = objectCreate();
+        contentItem.type = "text";
+        contentItem.text = text;
+        let content = arrayCreate();
+        arrayPush(content, contentItem);
+        let result = objectCreate();
+        result.content = content;
+        result.isError = false;
+        return success(id, result);
+    }
+
+    method resourcesList(id) {
+        let result = objectCreate();
+        result.resources = arrayCreate();
+        return success(id, result);
+    }
+
+    method resourcesRead(params, id) {
+        let uri = "";
+        if (params.uri != false) { uri = params.uri; }
+        let contents = arrayCreate();
+        let result = objectCreate();
+        result.contents = contents;
+        return success(id, result);
+    }
+
+    method promptsList(id) {
+        let result = objectCreate();
+        result.prompts = arrayCreate();
+        return success(id, result);
+    }
+
+    method promptsGet(params, id) {
+        let name = "";
+        if (params.name != false) { name = params.name; }
+        let result = objectCreate();
+        result.messages = arrayCreate();
+        return success(id, result);
     }
 
     method initialize(id) {
-        let caps = InitCaps();
-        let serverInfo = InitServerInfo("melt-mcp-framework", "1.0");
-        let out = InitResult(caps, serverInfo);
+        // Build with plain objects so JSON never has null; some MCP clients (Zod) require result to be an object.
+        let caps = objectCreate();
+        caps.tools = objectCreate();
+        caps.resources = objectCreate();
+        caps.prompts = objectCreate();
+        let serverInfo = objectCreate();
+        serverInfo.name = "melt-mcp-framework";
+        serverInfo.version = "1.0";
+        let out = objectCreate();
+        out.protocolVersion = "2024-11-05";
+        out.capabilities = caps;
+        out.serverInfo = serverInfo;
         return success(id, out);
-    }
-}
-
-class ToolDesc {
-    method init(name, desc) {
-        this.name = name;
-        this.description = desc;
-    }
-}
-
-class InitCaps {
-    method init() {
-        this.tools = objectCreate();
-    }
-}
-
-class InitServerInfo {
-    method init(name, version) {
-        this.name = name;
-        this.version = version;
-    }
-}
-
-class InitResult {
-    method init(caps, serverInfo) {
-        this.capabilities = caps;
-        this.serverInfo = serverInfo;
     }
 }

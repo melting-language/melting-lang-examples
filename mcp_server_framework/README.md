@@ -36,15 +36,25 @@ echo '{"jsonrpc":"2.0","id":1,"method":"ping"}
 {"jsonrpc":"2.0","id":3,"method":"add","params":{"a":10,"b":20}}' | ./bin/melt examples/mcp_server_framework/main.melt
 ```
 
-## Built-in methods
+## MCP lifecycle
 
-| Method          | Description                    | Params / result                    |
-|-----------------|--------------------------------|------------------------------------|
-| `ping`          | Health check                   | Result: `"pong"`                   |
-| `echo`          | Echo a message                 | `params.message` → result          |
-| `add`           | Add two numbers                | `params.a`, `params.b` → result    |
-| `tools/list`    | List available tools          | Result: array of `{name, description}` |
-| `initialize`    | MCP-style init                 | Result: capabilities + serverInfo  |
+The server implements the MCP spec lifecycle:
+
+- **initialize** — Returns `protocolVersion` (e.g. `"2024-11-05"`), `capabilities` (tools, resources, prompts), and `serverInfo` (name, version).
+- **tools/list** — Returns `{ tools: [ { name, description, inputSchema } ] }` with JSON Schema for each tool.
+- **tools/call** — Params: `name`, `arguments`. Returns `{ content: [ { type: "text", text: "..." } ], isError: false }`.
+- **resources/list** — Returns `{ resources: [] }` (stub).
+- **resources/read** — Returns `{ contents: [] }` (stub).
+- **prompts/list** — Returns `{ prompts: [] }` (stub).
+- **prompts/get** — Returns `{ messages: [] }` (stub).
+
+Legacy/custom methods (same process, one line per message):
+
+| Method       | Description           | Params / result                          |
+|--------------|------------------------|------------------------------------------|
+| `ping`       | Health check          | Result: `"pong"`                         |
+| `echo`       | Echo a message        | `params.message` → result                |
+| `add`        | Add two numbers       | `params.a`, `params.b` → result          |
 
 ## Config
 

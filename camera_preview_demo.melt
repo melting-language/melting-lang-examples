@@ -1,0 +1,20 @@
+// Webcam video preview. Requires: extension = camera in melt.config, and OpenCV (brew install opencv).
+// Run: ./build/melt examples/camera_preview_demo.melt
+// Close the preview window with Escape or Q.
+
+try {
+    if (!cameraAvailable()) {
+        print "No camera found. Plug in a webcam or check permissions.";
+    } else {
+        print "Opening webcam preview (640x480). Press Escape or Q to close.";
+        let ok = cameraPreview(640, 480);
+        if (ok) {
+            print "Preview closed.";
+        } else {
+            print "Could not open camera.";
+        }
+    }
+} catch (e) {
+    print "Camera extension not available: " + e;
+    print "Install OpenCV (e.g. brew install opencv) and rebuild. Add extension = camera to melt.config.";
+}

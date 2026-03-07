@@ -1,0 +1,21 @@
+// Class global (static) variables: shared by all instances.
+// Run: ./build/melt examples/class_static_demo.melt
+
+class Counter {
+    static count = 0;
+    method init() {
+        Counter.count = Counter.count + 1;
+    }
+    method getCount() {
+        return Counter.count;
+    }
+}
+
+let a = Counter();
+let b = Counter();
+let c = Counter();
+print a.getCount();
+print b.getCount();
+print Counter.count;
+Counter.count = 100;
+print c.getCount();
