@@ -1,12 +1,12 @@
 // Admin panel config: app name, port, SQLite DB path.
-// Build Melt with SQLite: make with-sqlite
-// Run from project root so dbPath resolves: ./build/melt examples/admin_panel_sqlite/main.melt
+// Build Melt with SQLite (default with cmake). Run: ./build/melt examples/admin_panel_sqlite/main.melt
+// dbPath is relative to the script directory (data.sqlite next to main.melt).
 
 class AppConfig {
     method init() {
         this.name = "Admin Panel";
         this.port = 8080;
-        this.dbPath = "examples/admin_panel_sqlite/data.sqlite";
+        this.dbPath = "data.sqlite";
     }
 }
 

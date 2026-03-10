@@ -1,8 +1,9 @@
-// Bootstrap admin panel with SQLite. Build: make with-sqlite
-// Run: ./bin/melt examples/admin_panel_sqlite/main.melt
+// Admin panel with SQLite. Build: cmake -B build && cmake --build build (SQLite is on by default).
+// Run from project root: ./build/melt examples/admin_panel_sqlite/main.melt
 // Open http://localhost:8080 — login: admin / admin
 
 import "config.melt";
+import "db.melt";
 import "routes.melt";
 
 class App {
@@ -39,6 +40,7 @@ class App {
 }
 
 setHandler("App");
+Db().ensureDb();
 print "Admin panel: http://localhost:" + app.port;
 print "  Login: admin / admin";
 listen(app.port);
