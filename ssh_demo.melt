@@ -1,0 +1,23 @@
+// SSH extension demo. Enable ssh in melt.config (extension = ...,ssh).
+// Usage: melt examples/ssh_demo.melt
+// Edit host, user, pass below for your SSH server.
+
+let host = "localhost";
+let user = "test";
+let pass = "test";
+
+print "SSH extension version: " + sshVersion();
+if (sshVersion() != "0 (stub)") {
+    print "Connecting to " + host + " as " + user + "...";
+    if (sshConnect(host, user, pass)) {
+        print "Connected.";
+        print "uptime: " + sshExec("uptime");
+        print "whoami: " + sshExec("whoami");
+        sshClose();
+        print "Done.";
+    } else {
+        print "Connection failed (check host, user, password).";
+    }
+} else {
+    print "SSH is stub (libssh not found). Install libssh and rebuild to connect.";
+}

@@ -1,0 +1,79 @@
+// Minimal HTTP server — route table + named handlers (fn improved).
+// Run: melt examples/http_server_minimal.melt  then open http://localhost:8766/
+//
+// HTTP built-ins:
+//   Request:  getRequestPath()  getRequestMethod()  getRequestBody()  getRequestHeader(name)
+//   Response: setResponseBody() setResponseStatus() setResponseContentType() setResponseHeader(name, value)
+//   Control:  setHandler("App")  listen(port)
+
+// Named handlers: one place for each route’s logic (easy to read and change).
+class Handlers {
+    method home() {
+        setResponseBody("<h1>Hello</h1><p>Minimal HTTP server. Try <a href=\"/info\">/info</a> or POST to <a href=\"/echo\">/echo</a>.</p>");
+        setResponseStatus(200);
+    }
+    method info() {
+        let reqMethod = getRequestMethod();
+        let path = getRequestPath();
+        let ua = getRequestHeader("user-agent");
+        if (ua == false) { ua = ""; }
+        setResponseBody("<h1>Request info</h1><p>Method: " + reqMethod + "</p><p>Path: " + path + "</p><p>User-Agent: " + ua + "</p>");
+        setResponseStatus(200);
+    }
+    method echoGet() {
+        setResponseBody("<h1>Echo</h1><p>Send a POST request with a body to see it echoed.</p>");
+        setResponseStatus(200);
+    }
+    method echoPost() {
+        let body = getRequestBody();
+        setResponseContentType("text/plain; charset=utf-8");
+        setResponseBody("Echo: " + body);
+        setResponseStatus(200);
+    }
+    method notFound(path) {
+        setResponseBody("<h1>404</h1><p>Not found: " + path + "</p>");
+        setResponseStatus(404);
+    }
+}
+
+// Route table: [ path, method, fn() ] — fn only calls the named handler (no inline logic).
+let routeList = [
+    [ "/", "GET",  fn() { Handlers().home(); } ],
+    [ "/info", "GET", fn() { Handlers().info(); } ],
+    [ "/echo", "GET", fn() { Handlers().echoGet(); } ],
+    [ "/echo", "POST", fn() { Handlers().echoPost(); } ]
+];
+
+// Run a route handler in one place (add default headers, logging, or try/catch here later).
+class Router {
+    method run(handlerFn) {
+        handlerFn();
+    }
+    method dispatch(path, reqMethod) {
+        let i = 0;
+        while (i < arrayLength(routeList)) {
+            let r = arrayGet(routeList, i);
+            if (path == arrayGet(r, 0) && reqMethod == arrayGet(r, 1)) {
+                this.run(arrayGet(r, 2));
+                return;
+            }
+            i = i + 1;
+        }
+        Handlers().notFound(path);
+    }
+}
+
+class App {
+    method handle() {
+        let path = getRequestPath();
+        let reqMethod = getRequestMethod();
+        let pathParts = splitString(path, "?");
+        path = arrayGet(pathParts, 0);
+        if (servePublic(path)) return;
+        Router().dispatch(path, reqMethod);
+    }
+}
+
+setHandler("App");
+print "HTTP server: http://localhost:8766  (GET /  /info  /echo ; POST /echo)";
+listen(8766);
