@@ -1,0 +1,44 @@
+<main class="wrap">
+  <h1>About</h1>
+  <p>
+    Every page on this site is assembled from small HTML partials chained
+    together in Melt. Each controller builds a <code>Document</code> and
+    calls <code>.append(path, data)</code> once per partial -- head, navbar,
+    page body, footer -- then <code>.build()</code> returns the finished
+    HTML string:
+  </p>
+  <pre><code>Document()
+    .append("views/partials/head.html", ["title" :=&gt; "Home"])
+    .append("views/partials/navbar.html", navData)
+    .append("views/home.html", pageData)
+    .append("views/partials/footer.html", footerData)
+    .append("views/partials/foot.html", objectCreate())
+    .build();</code></pre>
+  <p>
+    Each <code>append()</code> returns <code>this</code>, which is what
+    makes the chaining possible.
+  </p>
+  <p>
+    Partials can also pull in smaller fragments themselves with
+    <code>&#123;&#123; include("file.html") &#125;&#125;</code> right
+    inside the HTML -- this page's own <code>&lt;head&gt;</code> includes
+    <code>meta.html</code> for its social preview tags, and the footer
+    below includes <code>social.html</code> for its links. Includes share
+    whatever data was passed to the page that included them.
+  </p>
+  <p>
+    Routing is Laravel-style, defined in <code>routes.melt</code>:
+  </p>
+  <pre><code>Route.get('/about', [AboutController, 'index']);
+Route.get('/hello/{name}', [HelloController, 'greet']);</code></pre>
+  <p>
+    <code>Class.method()</code> calls a method with no instance -- melt
+    classes are already values, so <code>[HelloController, 'greet']</code>
+    just holds the class itself alongside the method name -- and
+    <code>{name}</code> path segments are captured and passed as positional
+    arguments to the handler via
+    <code>callMethod(controller, methodName, params)</code> -- see the
+    <a href="/hello/World">Say Hello</a> page for <code>{name}</code> in
+    action.
+  </p>
+</main>

@@ -1,0 +1,18 @@
+import "../core/document.melt";
+
+class HelloController {
+    // Bound to /hello/{name} -- `name` is the path parameter captured by
+    // Route.matchPath and passed in by routes.melt's dispatch().
+    method greet(name) {
+        let page = Document()
+            .append("views/partials/head.html", ["title" :=> "Hello, " + name + " — " + app.name, "tagline" :=> app.tagline])
+            .append("views/partials/navbar.html", navDataFor("Alex", true))
+            .append("views/hello.html", ["name" :=> name])
+            .append("views/partials/footer.html", ["year" :=> 2026, "siteName" :=> app.name])
+            .append("views/partials/foot.html", objectCreate())
+            .build();
+        setResponseBody(page);
+        setResponseStatus(200);
+        return;
+    }
+}

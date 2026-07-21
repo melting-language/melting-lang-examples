@@ -1,0 +1,16 @@
+import "../core/document.melt";
+
+class AboutController {
+    method index() {
+        let page = Document()
+            .append("views/partials/head.html", ["title" :=> "About — " + app.name, "tagline" :=> app.tagline])
+            .append("views/partials/navbar.html", navDataFor("Alex", true))
+            .append("views/about.html", objectCreate())
+            .append("views/partials/footer.html", ["year" :=> 2026, "siteName" :=> app.name])
+            .append("views/partials/foot.html", objectCreate())
+            .build();
+        setResponseBody(page);
+        setResponseStatus(200);
+        return;
+    }
+}

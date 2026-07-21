@@ -18,7 +18,9 @@ From the project root:
 ./bin/melt examples/json_demo.melt
 ./bin/melt examples/encryption_demo.melt
 ./bin/melt examples/return_demo.melt
+./bin/melt examples/laravel_style_routes.melt
 ./bin/melt examples/web_project_mvc/main.melt   # then open http://localhost:8080
+./bin/melt examples/website_starter/main.melt   # then open http://localhost:8090
 ./bin/melt examples/official_website_using_melt/main.melt   # official site → http://localhost:4000
 echo '{"jsonrpc":"2.0","id":1,"method":"ping"}' | ./bin/melt examples/mcp_demo/main.melt   # stdio/MCP demo
 ```
@@ -39,6 +41,8 @@ Or from the `examples` folder (if `melt` is on your PATH or you use the path to 
 | `hello.melt` | Minimal hello world |
 | `basics.melt` | Variables, conditionals, loops |
 | `oop.melt` | Classes, objects, methods |
+| `method_chaining_demo.melt` | Method chaining: methods that `return this;` so calls can be strung together, e.g. `Calculator(10).add(5).multiply(2).result()` |
+| `laravel_style_routes.melt` | Laravel-style routes: `Route.get('/users/{id}', [UserController, 'show'])`, using static method calls (`Class.method()`) and dynamic dispatch (`callMethod(obj, "name", args)`) |
 | `counter.melt` | Simple Counter class with state |
 | `multi_file/` | Multiple files: import class files from `main.melt` |
 | `server.melt` | HTTP server (backend): `setHandler`, `listen`, request/response built-ins |
@@ -51,5 +55,6 @@ Or from the `examples` folder (if `melt` is on your PATH or you use the path to 
 | `return_demo.melt` | Method return values: `return expr;` and `return;` in methods |
 | `comment_demo.melt` | Comments: `//` line and `/* */` block |
 | `web_project_mvc/` | MVC-style website: model, view, controller; run `./bin/melt examples/web_project_mvc/main.melt` then open http://localhost:8080 |
+| `website_starter/` | Multi-page website (Home/About/Contact) whose pages are composed from HTML partials via a fluent `Document` builder — `Document().append(path, data).append(path, data)...build()`; run `./bin/melt examples/website_starter/main.melt` then open http://localhost:8090 |
 | `official_website_using_melt/` | Official Melt website (MVC): Home, Documentation, About, Resource, Support, Blog; run `./bin/melt examples/official_website_using_melt/main.melt` then open http://localhost:4000 |
 | `mcp_demo/` | Stdio / MCP transport: one JSON-RPC line per request on stdin, one response line on stdout; run with `echo '{"jsonrpc":"2.0","id":1}' \| ./bin/melt examples/mcp_demo/main.melt` |

@@ -1,0 +1,14 @@
+import "config/app.melt";
+import "routes.melt";
+
+class App {
+    method handle() {
+        let path = getRequestPath();
+        Route.dispatch(path);
+    }
+}
+
+setHandler("App");
+print "Melt website starter: http://localhost:" + app.port;
+print "  /  - Home   /about - About   /contact - Contact   /hello/{name} - Hello";
+listen(app.port);

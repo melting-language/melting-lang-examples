@@ -1,0 +1,10 @@
+<main class="wrap">
+  <h1>Hello, {{ name }}!</h1>
+  <p>
+    This page is served by a route with a parameter --
+    <code>Route.get('/hello/{name}', [HelloController, 'greet'])</code>
+    -- so the name above is whatever comes after <code>/hello/</code> in the
+    URL. Try changing it in the address bar.
+  </p>
+  <p><a href="/">&larr; Back home</a></p>
+</main>

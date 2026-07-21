@@ -1,0 +1,98 @@
+// Laravel-style route definitions in Melt:
+//
+//   Route.get('/users', [UserController, 'index']);
+//   Route.get('/users/{id}', [UserController, 'show']);
+//
+// (Laravel spells this Route::get(...) with UserController::class; melt
+// doesn't have a :: operator -- `.` already does the same job.)
+//
+// This uses two melt features:
+//   - `Class.method(args)` -- calling a method through a *class* value
+//     (not an instance) invokes it with no `this` bound ("static" call),
+//     instead of erroring. Any declared `method` can be called this way.
+//     Melt classes are already first-class values, so `UserController`
+//     alone is the class reference -- no special syntax needed for it.
+//   - `callMethod(receiver, "methodName", argsArray)` -- calls a method
+//     whose name is only known at runtime as a string. This is what lets
+//     a route table store `[UserController, 'show']` and actually invoke
+//     it later.
+//
+// Run: ./build/melt examples/laravel_style_routes.melt
+
+class UserController {
+    method index() {
+        return "All users";
+    }
+    method show(id) {
+        return "User #" + id;
+    }
+    method comments(userId, commentId) {
+        return "User " + userId + ", comment " + commentId;
+    }
+}
+
+class Route {
+    static routes = [];
+
+    method get(path, handler) {
+        arrayPush(Route.routes, ["path" :=> path, "handler" :=> handler]);
+    }
+
+    // Matches actualPath against a pattern like "/users/{id}".
+    // Returns ["matched" :=> bool, "params" :=> array of captured values,
+    // in the order the {placeholders} appear in the pattern].
+    method matchPath(pattern, actualPath) {
+        let patternParts = splitString(pattern, "/");
+        let actualParts = splitString(actualPath, "/");
+        if (arrayLength(patternParts) != arrayLength(actualParts)) {
+            return ["matched" :=> false, "params" :=> arrayCreate()];
+        }
+        let params = arrayCreate();
+        // Named segIndex (not "i") because dispatch() below also loops with
+        // its own counter and calls this method from inside that loop --
+        // melt has no per-call variable scope, so two same-named loop
+        // counters in nested calls would silently stomp on each other.
+        let segIndex = 0;
+        let ok = true;
+        while (segIndex < arrayLength(patternParts)) {
+            let pp = arrayGet(patternParts, segIndex);
+            let ap = arrayGet(actualParts, segIndex);
+            if (stringStartsWith(pp, "{") && stringEndsWith(pp, "}")) {
+                arrayPush(params, ap);
+            } else if (pp != ap) {
+                ok = false;
+            }
+            segIndex = segIndex + 1;
+        }
+        return ["matched" :=> ok, "params" :=> params];
+    }
+
+    method dispatch(path) {
+        let routeIndex = 0;
+        while (routeIndex < arrayLength(Route.routes)) {
+            let route = arrayGet(Route.routes, routeIndex);
+            let m = Route.matchPath(route["path"], path);
+            if (m["matched"]) {
+                let handler = route["handler"];
+                let controllerClass = arrayGet(handler, 0);
+                let methodName = arrayGet(handler, 1);
+                let controller = controllerClass();
+                // Path params become positional args, in path order --
+                // this is what makes show(id) and comments(userId, commentId)
+                // both work without special-casing any route.
+                return callMethod(controller, methodName, m["params"]);
+            }
+            routeIndex = routeIndex + 1;
+        }
+        return "404 Not Found";
+    }
+}
+
+Route.get('/users', [UserController, 'index']);
+Route.get('/users/{id}', [UserController, 'show']);
+Route.get('/users/{userId}/comments/{commentId}', [UserController, 'comments']);
+
+print Route.dispatch("/users");
+print Route.dispatch("/users/42");
+print Route.dispatch("/users/7/comments/99");
+print Route.dispatch("/nope");

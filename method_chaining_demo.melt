@@ -1,0 +1,53 @@
+// Method chaining: each method returns `this`, so calls can be strung
+// together in a single statement: obj.method1().method2().method3();
+
+class Calculator {
+    method init(start) {
+        this.value = start;
+    }
+    method add(n) {
+        this.value = this.value + n;
+        return this;          // returning `this` is what enables chaining
+    }
+    method subtract(n) {
+        this.value = this.value - n;
+        return this;
+    }
+    method multiply(n) {
+        this.value = this.value * n;
+        return this;
+    }
+    method result() {
+        return this.value;    // final call in the chain can return a plain value
+    }
+}
+
+let total = Calculator(10).add(5).multiply(2).subtract(4).result();
+print "Calculator(10).add(5).multiply(2).subtract(4).result() = ";
+print total;
+
+// Chaining also works with a fluent "builder" that collects state, then
+// exposes it with a terminal method.
+class TextBuilder {
+    method init() {
+        this.parts = arrayCreate();
+    }
+    method add(word) {
+        arrayPush(this.parts, word);
+        return this;
+    }
+    method addUpper(word) {
+        arrayPush(this.parts, toUpperCase(word));
+        return this;
+    }
+    method build() {
+        return arrayJoin(this.parts, " ");
+    }
+}
+
+let sentence = TextBuilder().add("melt").addUpper("is").add("fun").build();
+print sentence;
+
+// Chaining works directly on a fresh instance too -- no intermediate
+// variable is required.
+print Calculator(0).add(1).add(2).add(3).result();

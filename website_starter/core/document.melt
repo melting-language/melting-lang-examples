@@ -1,0 +1,40 @@
+import "../config/app.melt";
+
+// Document: a fluent page builder.
+//
+// Each append() renders one HTML partial (via the built-in renderView) with
+// its own data map, and appends the result to the page -- then returns
+// `this` so calls chain:
+//
+//   Document()
+//       .append("views/partials/head.html", ["title" :=> "Home"])
+//       .append("views/partials/navbar.html", navData)
+//       .append("views/home.html", pageData)
+//       .append("views/partials/footer.html", footerData)
+//       .build();
+//
+// `append` always takes exactly two arguments -- melt methods require an
+// exact argument-count match, so pass objectCreate() (an empty object) for
+// partials that need no data.
+class Document {
+    method init() {
+        this.html = "";
+    }
+    method append(viewPath, viewData) {
+        this.html = this.html + renderView(viewPath, viewData);
+        return this;
+    }
+    method build() {
+        return this.html;
+    }
+}
+
+// Shared navbar data: every page's nav renders the same greeting logic,
+// centralized here so controllers don't repeat it.
+let navDataFor = fn(username, isLoggedIn) {
+    let greeting = "Sign in";
+    if (isLoggedIn) {
+        greeting = "Welcome, " + username;
+    }
+    return ["greeting" :=> greeting];
+};

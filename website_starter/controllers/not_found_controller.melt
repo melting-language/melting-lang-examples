@@ -1,0 +1,16 @@
+import "../core/document.melt";
+
+class NotFoundController {
+    method show(path) {
+        let page = Document()
+            .append("views/partials/head.html", ["title" :=> "404 — " + app.name, "tagline" :=> app.tagline])
+            .append("views/partials/navbar.html", navDataFor("Alex", true))
+            .append("views/404.html", ["path" :=> path])
+            .append("views/partials/footer.html", ["year" :=> 2026, "siteName" :=> app.name])
+            .append("views/partials/foot.html", objectCreate())
+            .build();
+        setResponseBody(page);
+        setResponseStatus(404);
+        return;
+    }
+}

@@ -1,0 +1,12 @@
+// App configuration: name, port, tagline.
+// Imported by main.melt (port, name) and core/document.melt (name, tagline).
+
+class AppConfig {
+    method init() {
+        this.name = "Melt Site";
+        this.port = 8090;
+        this.tagline = "A small website built with Melt, assembled from partials with method chaining.";
+    }
+}
+
+let app = AppConfig();
